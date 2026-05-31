@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inscrição Organicamente - Assinatura de Cestas CSA</title>
+    <!-- Importação de fontes premium do Google Fonts (Plus Jakarta Sans para títulos e Inter para texto) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <!-- Linha de Progresso Minimalista de Topo -->
+    <div id="minimal-progress-bar" class="minimal-progress-bar"></div>
+
+    <div id="app" class="fullscreen-app">
+      
+      <!-- Branding Minimalista Flutuante (Typeform Style) -->
+      <div class="onboarding-brand" id="onboarding-brand">
+        <img class="brand-logo" src="/assets/logo_oficial.png" alt="Logo Organicamente" width="40" height="40">
+      </div>
+
+      <!-- Layout Imersivo (Coluna Única e Centralizada) -->
+      <main class="main-content layout-onboarding">
+        <section class="form-section onboarding-card">
+          <form id="signup-form" method="POST" novalidate>
+            
+            <!-- TELA DE INTRODUÇÃO (PASSO INICIAL) -->
+            <fieldset id="step-pane-intro" class="step-pane active">
+              <legend class="visually-hidden">Apresentação: Assinatura de Cestas Organicamente</legend>
+              <div class="intro-split-layout">
+                <div class="intro-image-side" style="background-image: url('/assets/intro_basket.jpg');" aria-label="Família sorridente com crianças escolhendo alimentos orgânicos frescos direto do produtor rural local."></div>
+                <div class="intro-content-side">
+                  <div class="intro-logo-container">
+                    <img class="intro-logo-img" src="/assets/logo_oficial.png" alt="Logo Organicamente" width="90" height="90">
+                  </div>
+                  <h1>Alimente-se com saúde, direto da terra</h1>
+                  <p class="intro-lead">A Organicamente conecta você a famílias agricultoras locais que produzem alimentos sem veneno. Faça parte de uma comunidade de consumo consciente (CSA) e receba vegetais frescos toda semana.</p>
+                  <div class="intro-features">
+                    <div class="intro-feat-item">
+                      <span class="feat-bullet">🌾</span>
+                      <span>Cultivo agroecológico sem agrotóxicos</span>
+                    </div>
+                    <div class="intro-feat-item">
+                      <span class="feat-bullet">🤝</span>
+                      <span>Relação direta com o produtor familiar</span>
+                    </div>
+                    <div class="intro-feat-item">
+                      <span class="feat-bullet">🚚</span>
+                      <span>Entrega semanal no seu bairro</span>
+                    </div>
+                  </div>
+                  <button type="button" id="start-onboarding-btn" class="btn btn-primary btn-lg">
+                    Quero Receber Minha Cesta
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  </button>
+                </div>
+              </div>
+            </fieldset>
+            
+            <!-- STEP 1: ONDE ENTREGAMOS? (REGIAO E BAIRRO -> MATCH PRODUTOR) -->
+            <fieldset id="step-pane-1" class="step-pane hidden">
+              <legend class="visually-hidden">Passo 1: Sua Localização</legend>
+              <div class="step-header">
+                <h2>Sua Localização</h2>
+                <p>Selecione sua região e bairro para encontrarmos a rota de entrega e o agricultor parceiro mais próximo de você.</p>
+              </div>
+              <div class="step-body">
+                <!-- Seletor de Região (Cards Visuais) -->
+                <div class="form-group">
+                  <label>1. Sua Região:</label>
+                  <div class="region-cards-grid">
+                    <button type="button" class="region-card" data-value="zona-sul">
+                      <span class="region-icon">📍</span>
+                      <span class="region-label">Zona Sul</span>
+                    </button>
+                    <button type="button" class="region-card" data-value="barra-recreio">
+                      <span class="region-icon">🌴</span>
+                      <span class="region-label">Barra / Recreio</span>
+                    </button>
+                    <button type="button" class="region-card" data-value="tijuca">
+                      <span class="region-icon">⛰️</span>
+                      <span class="region-label">Grande Tijuca</span>
+                    </button>
+                    <button type="button" class="region-card" data-value="centro-zona-norte">
+                      <span class="region-icon">🏢</span>
+                      <span class="region-label">Centro e Zona Norte</span>
+                    </button>
+                  </div>
+                  
+                  <!-- Select nativo mantido oculto sob display: none; para compatibilidade lógica -->
+                  <select id="region-select" name="regiao" required style="display: none;">
+                    <option value="" disabled selected>Escolha sua região...</option>
+                    <option value="zona-sul">Zona Sul</option>
+                    <option value="barra-recreio">Barra / Recreio</option>
+                    <option value="tijuca">Grande Tijuca</option>
+                    <option value="centro-zona-norte">Centro e Zona Norte</option>
+                  </select>
+                  <span id="region-error" class="field-error-msg" aria-live="polite"></span>
+                </div>
+
+                <!-- Seletor de Bairro (Tags/Pills Flexíveis para Clique Rápido) -->
+                <div class="form-group">
+                  <label id="label-neighborhood">2. Seu Bairro:</label>
+                  <div class="neighborhood-tags-container" id="neighborhood-tags-container">
+                    <p class="neighborhood-placeholder-text">Selecione uma região acima para exibir os bairros atendidos...</p>
+                  </div>
+                  
+                  <!-- Select nativo mantido oculto sob display: none; para compatibilidade lógica -->
+                  <select id="neighborhood-select" name="bairro_seletor" required disabled style="display: none;">
+                    <option value="" disabled selected>Selecione a região primeiro...</option>
+                  </select>
+                  <span id="neighborhood-error" class="field-error-msg" aria-live="polite"></span>
+                </div>
+
+              </div>
+            </fieldset>
+            
+            <!-- STEP 2: ESCOLHA DO AGRICULTOR (NOVO) -->
+            <fieldset id="step-pane-2" class="step-pane hidden">
+              <legend class="visually-hidden">Passo 2: Escolha do Agricultor</legend>
+              <div class="step-header">
+                <h2>Seu Agricultor Parceiro</h2>
+                <p>Estes são os agricultores da nossa comunidade que atendem a sua região. Escolha o seu produtor parceiro.</p>
+              </div>
+              <div class="step-body">
+                <div class="farmer-selection-grid">
+                  
+                  <!-- Card Russo -->
+                  <div class="farmer-select-card" id="farmer-card-russo" data-value="russo">
+                    <div class="farmer-select-badge" id="badge-russo">Atende seu bairro</div>
+                    <div class="farmer-select-img-container">
+                      <img src="/assets/russo.jpg" alt="Foto de José Antônio Pereira (Russo)" width="200" height="200">
+                    </div>
+                    <div class="farmer-select-info">
+                      <h3>José Antônio Pereira (Russo)</h3>
+                      <span class="farmer-select-origin">Taquara / RJ</span>
+                      <p class="farmer-select-desc">Cultiva com afeto vegetais frescos e variados sob manejo agroecológico. É pioneiro na nossa comunidade de consumo.</p>
+                      <div class="farmer-select-delivery">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Entrega: <strong class="farmer-delivery-day-text" id="delivery-day-russo">Quarta-feira</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Card Bruno -->
+                  <div class="farmer-select-card" id="farmer-card-bruno" data-value="bruno">
+                    <div class="farmer-select-badge" id="badge-bruno">Atende seu bairro</div>
+                    <div class="farmer-select-img-container">
+                      <img src="/assets/bruno.jpg" alt="Foto de Bruno Branco" width="200" height="200">
+                    </div>
+                    <div class="farmer-select-info">
+                      <h3>Bruno Branco</h3>
+                      <span class="farmer-select-origin">Itaipava / RJ</span>
+                      <p class="farmer-select-desc">Lidera uma cooperativa familiar com foco em hortaliças crocantes, durabilidade e grande diversidade de temperos.</p>
+                      <div class="farmer-select-delivery">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Entrega: <strong class="farmer-delivery-day-text" id="delivery-day-bruno">Terça ou Quarta-feira</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+                <!-- Inputs ocultos para submissão lógica do agricultor selecionado -->
+                <input type="hidden" id="input-produtor" name="produtor" value="">
+                <input type="hidden" id="input-dia-entrega" name="diaEntrega" value="">
+                <span id="produtor-error" class="field-error-msg" aria-live="polite"></span>
+              </div>
+            </fieldset>
+
+            <!-- STEP 3: ESCOLHA DA CESTA (TAMANHO) -->
+            <fieldset id="step-pane-3" class="step-pane hidden">
+              <legend class="visually-hidden">Passo 3: Tamanho da Assinatura</legend>
+              <div class="step-header">
+                <h2>Tamanho da Assinatura</h2>
+                <p>Escolha o plano ideal de vegetais agroecológicos para a sua casa. A colheita e a entrega são semanais.</p>
+              </div>
+              <div class="step-body">
+                <div class="basket-selection-area">
+                  <div class="basket-options-grid">
+                    
+                    <label class="basket-option-card" for="basket-familia">
+                      <input type="radio" name="cesta" id="basket-familia" value="familia" data-price="220" data-label="Assinatura Família" checked>
+                      <span class="basket-card-inner">
+                        <span class="basket-title">Assinatura Família</span>
+                        <span class="basket-frequency">Semanal (Mensalidade)</span>
+                        <span class="basket-details">10 a 12 variedades de legumes, verduras e temperos da época. Ideal para 3 ou mais pessoas.</span>
+                        <span class="basket-price">R$ <span id="price-basket-familia">220,00</span><span class="price-period">/mês</span></span>
+                      </span>
+                    </label>
+
+                    <label class="basket-option-card" for="basket-individual">
+                      <input type="radio" name="cesta" id="basket-individual" value="individual" data-price="140" data-label="Assinatura Individual">
+                      <span class="basket-card-inner">
+                        <span class="basket-title">Assinatura Individual</span>
+                        <span class="basket-frequency">Semanal (Mensalidade)</span>
+                        <span class="basket-details">6 a 8 variedades de vegetais colhidos no dia. Ideal para 1 ou 2 pessoas.</span>
+                        <span class="basket-price">R$ <span id="price-basket-individual">140,00</span><span class="price-period">/mês</span></span>
+                      </span>
+                    </label>
+
+                    <label class="basket-option-card" for="basket-quinzenal">
+                      <input type="radio" name="cesta" id="basket-quinzenal" value="quinzenal" data-price="90" data-label="Assinatura Quinzenal">
+                      <span class="basket-card-inner">
+                        <span class="basket-title">Assinatura Quinzenal</span>
+                        <span class="basket-frequency">Quinzenal (Mensalidade)</span>
+                        <span class="basket-details">6 a 8 variedades entregues em semanas alternadas. Indicado para menor consumo.</span>
+                        <span class="basket-price">R$ <span id="price-basket-quinzenal">90,00</span><span class="price-period">/mês</span></span>
+                      </span>
+                    </label>
+
+                    <label class="basket-option-card" for="basket-unitaria">
+                      <input type="radio" name="cesta" id="basket-unitaria" value="unitaria" data-price="50" data-label="Assinatura Unitária">
+                      <span class="basket-card-inner">
+                        <span class="basket-title">Assinatura Unitária</span>
+                        <span class="basket-frequency">Avulsa (Sem mensalidade)</span>
+                        <span class="basket-details">Uma única entrega com 6 a 8 variedades da estação. Perfeito para experimentar o modelo.</span>
+                        <span class="basket-price">R$ <span id="price-basket-unitaria">50,00</span><span class="price-period">/entrega</span></span>
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- STEP 4: DECISÃO DE OVOS -->
+            <fieldset id="step-pane-4" class="step-pane hidden">
+              <legend class="visually-hidden">Passo 4: Opcional de Ovos</legend>
+              <div class="step-header">
+                <h2>Opcional de Ovos</h2>
+                <p>Complete a sua assinatura com ovos caipiras e orgânicos frescos, produzidos por galinhas criadas livres de gaiolas.</p>
+              </div>
+              <div class="step-body">
+                <div class="eggs-selection-area">
+                  <div class="eggs-options-grid option-count-2">
+                    
+                    <label class="egg-option-card" for="eggs-none">
+                      <input type="radio" name="ovos" id="eggs-none" value="nenhum" checked>
+                      <span class="egg-card-inner">
+                        <span class="egg-title">Apenas Vegetais</span>
+                        <span class="egg-desc">Prefiro assinar apenas a colheita de verduras, legumes e temperos da época.</span>
+                        <span class="egg-price">R$ 0,00</span>
+                      </span>
+                    </label>
+
+                    <label class="egg-option-card" for="eggs-add">
+                      <input type="radio" name="ovos" id="eggs-add" value="adicionar">
+                      <span class="egg-card-inner">
+                        <span class="egg-title">Adicionar Ovos Caipiras</span>
+                        <span class="egg-desc">Adicione ovos caipiras frescos para acompanhar as entregas da sua assinatura.</span>
+                        <span class="egg-price" id="price-eggs-add">+R$ 64,00/mês</span>
+                      </span>
+                    </label>
+                  </div>
+
+                  <!-- Seletor de Quantidade Dinâmico (Expandido quando "Adicionar" é marcado) -->
+                  <div id="egg-quantity-selector-container" class="egg-quantity-selector-container hidden">
+                    <label class="quantity-selector-label">Selecione a quantidade por entrega:</label>
+                    <div class="quantity-options-grid">
+                      <label class="qty-card" for="egg-qty-1">
+                        <input type="radio" name="ovos_quantidade" id="egg-qty-1" value="1" checked>
+                        <span class="qty-card-inner">
+                          <span class="qty-title">1 Dúzia</span>
+                          <span class="qty-price" id="price-qty-1">+R$ 64,00/mês</span>
+                        </span>
+                      </label>
+                      
+                      <label class="qty-card" for="egg-qty-2">
+                        <input type="radio" name="ovos_quantidade" id="egg-qty-2" value="2">
+                        <span class="qty-card-inner">
+                          <span class="qty-title">2 Dúzias</span>
+                          <span class="qty-price" id="price-qty-2">+R$ 128,00/mês</span>
+                        </span>
+                      </label>
+                      
+                      <label class="qty-card" for="egg-qty-3">
+                        <input type="radio" name="ovos_quantidade" id="egg-qty-3" value="3">
+                        <span class="qty-card-inner">
+                          <span class="qty-title">3 Dúzias</span>
+                          <span class="qty-price" id="price-qty-3">+R$ 192,00/mês</span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- STEP 5: SEUS DADOS (CAPTURA ESTRATÉGICA / RECUPERAÇÃO) -->
+            <fieldset id="step-pane-5" class="step-pane hidden">
+              <legend class="visually-hidden">Passo 5: Identificação</legend>
+              <div class="step-header">
+                <h2>Identificação</h2>
+                <p>Insira suas informações de contato básicas para darmos início ao suporte e avisos de entrega.</p>
+              </div>
+
+              <div class="step-body">
+                <div class="inputs-grid">
+                  <div class="form-group full-width">
+                    <label for="input-nome">Nome Completo:</label>
+                    <input type="text" id="input-nome" name="nome" autocomplete="name" required placeholder="Digite seu nome completo">
+                    <span id="nome-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-email">E-mail de Contato:</label>
+                    <input type="email" id="input-email" name="email" autocomplete="username email" required placeholder="exemplo@email.com">
+                    <span id="email-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-telefone">Telefone (WhatsApp):</label>
+                    <input type="tel" id="input-telefone" name="telefone" autocomplete="tel" required placeholder="(21) 99999-9999" inputmode="numeric">
+                    <span id="telefone-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label for="select-comoConheceu">Como conheceu a Organicamente?</label>
+                    <div class="select-container">
+                      <select id="select-comoConheceu" name="comoConheceu" required>
+                        <option value="" disabled selected>Selecione uma opção...</option>
+                        <option value="indicacao">Indicação de amigo/familiar</option>
+                        <option value="instagram">Instagram / Redes Sociais</option>
+                        <option value="evento">Evento ou Feira local</option>
+                        <option value="site">Google ou Pesquisa Web</option>
+                        <option value="outro">Outros meios</option>
+                      </select>
+                      <span id="comoConheceu-error" class="field-error-msg" aria-live="polite"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- STEP 6: LOGISTICA E RECEBIMENTO (+ CPF) -->
+            <fieldset id="step-pane-6" class="step-pane hidden">
+              <legend class="visually-hidden">Passo 6: Endereço de Entrega</legend>
+              <div class="step-header">
+                <h2>Endereço de Entrega</h2>
+                <p>Informe o endereço para a entrega semanal e seu CPF para faturamento fiscal.</p>
+              </div>
+              <div class="step-body">
+                <div class="inputs-grid">
+                  <div class="form-group">
+                    <label for="input-cep">CEP:</label>
+                    <input type="text" id="input-cep" name="cep" required placeholder="00000-000" autocomplete="postal-code" inputmode="numeric">
+                    <span id="cep-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group double-width">
+                    <label for="input-endereco">Endereço de Entrega (Rua/Avenida):</label>
+                    <input type="text" id="input-endereco" name="endereco" autocomplete="address-line1" required placeholder="Rua das Laranjeiras">
+                    <span id="endereco-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-numero">Número:</label>
+                    <input type="text" id="input-numero" name="numero" required placeholder="123">
+                    <span id="numero-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-complemento">Complemento (Apto/Bloco):</label>
+                    <input type="text" id="input-complemento" name="complemento" placeholder="Apto 402, Bloco A">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-bairro">Bairro:</label>
+                    <input type="text" id="input-bairro" name="bairro" required placeholder="Laranjeiras">
+                    <span id="bairro-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="input-cpf">CPF (Faturamento):</label>
+                    <input type="text" id="input-cpf" name="cpf" required placeholder="000.000.000-00" inputmode="numeric">
+                    <span id="cpf-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label for="input-pontoReferencia">Ponto de Referência:</label>
+                    <input type="text" id="input-pontoReferencia" name="pontoReferencia" placeholder="Ex: Próximo à padaria X">
+                  </div>
+
+                   <div class="form-group">
+                    <label for="select-vizinho">Se você não estiver, o que fazemos?</label>
+                    <div class="select-container">
+                      <select id="select-vizinho" name="vizinho" required>
+                        <option value="" disabled selected>Escolha uma opção...</option>
+                        <option value="portaria">Deixar na Portaria / Recepção</option>
+                        <option value="vizinho">Deixar com Vizinho</option>
+                        <option value="porta">Deixar pendurado na porta</option>
+                      </select>
+                      <span id="vizinho-error" class="field-error-msg" aria-live="polite"></span>
+                    </div>
+                  </div>
+
+                  <!-- Campo Dinâmico: Apenas visível se "Deixar com Vizinho" for selecionado -->
+                  <div class="form-group" id="group-vizinho-detalhes" style="display: none;">
+                    <label for="input-vizinho-detalhes">Nome/Apto do Vizinho:</label>
+                    <input type="text" id="input-vizinho-detalhes" name="vizinhoDetalhes" placeholder="Ex: Maria, Apto 502">
+                    <span id="vizinhoDetalhes-error" class="field-error-msg" aria-live="polite"></span>
+                  </div>
+
+                  <div class="form-group full-width">
+                    <label for="textarea-observacoes">Observações ou Restrições Logísticas:</label>
+                    <textarea id="textarea-observacoes" name="observacoes" rows="2" placeholder="Ex: Portão com senha, portaria fecha às 17h..."></textarea>
+                  </div>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- STEP 7: PACTO DE CONFIANÇA (TERMOS SIMPLIFICADOS) + RESUMO INTEGRADO -->
+            <fieldset id="step-pane-7" class="step-pane hidden">
+              <legend class="visually-hidden">Passo 7: Pacto de Confiança</legend>
+              <div class="step-header">
+                <h2>Pacto de Confiança</h2>
+                <p>Confirme o resumo financeiro da sua assinatura comunitária e aceite as diretrizes de cooperação da comunidade.</p>
+              </div>
+              <div class="step-body">
+                <div class="step-body-grid">
+                  
+                  <!-- Coluna Esquerda: Pacto / Regras -->
+                  <div class="step-column-left">
+                    <div class="rules-grid">
+                      <div class="rule-card">
+                        <div class="rule-icon-wrapper">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <h3>Mensalidade até o dia 5</h3>
+                        <p>O faturamento é realizado no início do ciclo mensal para garantir o sustento estável da produção familiar no campo.</p>
+                      </div>
+                      
+                      <div class="rule-card">
+                        <div class="rule-icon-wrapper">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        </div>
+                        <h3>Compromisso Recorrente</h3>
+                        <p>Ao aderir ao CSA, assumimos o compromisso de co-responsabilidade com a lavoura, partilhando riscos e colheitas da época.</p>
+                      </div>
+                      
+                      <div class="rule-card">
+                        <div class="rule-icon-wrapper">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        </div>
+                        <h3>Avisar Férias até Domingo</h3>
+                        <p>Caso viaje, avise no painel até o <strong>domingo anterior</strong>. Sua cesta daquela semana será destinada a doação comunitária.</p>
+                      </div>
+                    </div>
+
+                    <div class="agreement-container">
+                      <div class="checkbox-wrapper">
+                        <input type="checkbox" id="agreement-checkbox" name="agreement" required>
+                        <label for="agreement-checkbox" class="checkbox-label">
+                          Compreendo e concordo com os termos e regras de partilha da Organicamente.
+                        </label>
+                      </div>
+                      <span id="agreement-error" class="field-error-msg" aria-live="polite"></span>
+                    </div>
+                  </div>
+
+                  <!-- Coluna Direita: Recibo Dinâmico Premium -->
+                  <div class="step-column-right">
+                    <div class="checkout-summary-box">
+                      <h3 class="summary-box-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        Detalhamento do Pedido
+                      </h3>
+                      
+                      <ul class="summary-details-list">
+                        <li class="summary-item" id="summary-basket-row">
+                          <span class="item-name">Assinatura Família (Semanal)</span>
+                          <span class="item-value">R$ 220,00</span>
+                        </li>
+                        <li class="summary-item" id="summary-eggs-row">
+                          <span class="item-name">Sem Ovos</span>
+                          <span class="item-value">R$ 0,00</span>
+                        </li>
+                        <li class="summary-item" id="summary-fee-row">
+                          <span class="item-name">Taxa de Adesão (Única)</span>
+                          <span class="item-value">R$ 35,00</span>
+                        </li>
+                      </ul>
+
+                      <hr class="summary-divider">
+
+                      <div class="total-row recurring">
+                        <span class="total-label">Mensalidade Recorrente:</span>
+                        <span class="total-price" id="summary-total-monthly">R$ 220,00</span>
+                      </div>
+
+                      <div class="total-row highlight">
+                        <span class="total-label">Pagamento Inicial:<br><small class="fee-note">(Mensalidade + Adesão)</small></span>
+                        <span class="total-price" id="summary-total-initial">R$ 255,00</span>
+                      </div>
+                      
+                      <div class="csa-transparency">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <span><strong>100% Repassado ao Campo:</strong> Sua contribuição remunera diretamente o trabalho digno das famílias produtoras.</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Botoeiras de Navegação (Escondidas na Introdução) -->
+            <footer class="form-navigation hidden" id="form-navigation-container">
+              <button type="button" id="prev-btn" class="btn btn-secondary" enterkeyhint="previous">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                Voltar
+              </button>
+              <button type="button" id="next-btn" class="btn btn-primary" enterkeyhint="next">
+                Avançar
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </button>
+            </footer>
+
+          </form>
+        </section>
+      </main>
+
+      <!-- Tela de Sucesso -->
+      <section id="success-screen" class="success-screen hidden">
+        <div class="success-ticket-container">
+          <div class="success-ticket-header">
+            <img class="success-logo" src="/assets/logo_oficial.png" alt="Logo Organicamente" width="80" height="80">
+            <h1>Inscrição Confirmada!</h1>
+            <p class="success-lead">Obrigado, <strong id="success-user-name"></strong>, por apoiar a agricultura familiar local. Seja bem-vindo(a) ao CSA!</p>
+          </div>
+          
+          <div class="success-ticket-body">
+            <div class="ticket-stub-details">
+              <h3>Resumo do seu Compromisso</h3>
+              <div class="details-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Assinatura Selecionada</span>
+                  <span class="detail-val" id="success-basket-type">Assinatura Individual</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Adicionais</span>
+                  <span class="detail-val" id="success-eggs-type">Sem Ovos</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Agricultor Parceiro</span>
+                  <span class="detail-val" id="success-farmer-name">Russo</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Dia de Entrega</span>
+                  <span class="detail-val" id="success-delivery-day">Quarta-feira</span>
+                </div>
+                <div class="detail-item full">
+                  <span class="detail-label">Endereço de Entrega</span>
+                  <span class="detail-val" id="success-address">Rua das Flores, 123 - Copacabana</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Mensalidade Recorrente</span>
+                  <span class="detail-val highlight-green" id="success-monthly-value">R$ 140,00</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Valor Adesão (Único)</span>
+                  <span class="detail-val" id="success-fee-value">R$ 35,00</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="ticket-divider"></div>
+            
+            <!-- Chave Pix Copia e Cola -->
+            <div class="pix-payment-box">
+              <h4 class="pix-title">Primeiro Pagamento Inicial (Mensalidade + Adesão)</h4>
+              <p class="pix-instructions">Realize o pagamento do Pix Copia e Cola abaixo e envie o comprovante de adesão pelo WhatsApp para ativação final da sua entrega.</p>
+              <div class="pix-price" id="success-first-payment-value">R$ 175,00</div>
+              
+              <div class="pix-code-field">
+                <input type="text" id="pix-code-input" value="00020101021226870014br.gov.bcb.pix2565pix-comunitario-organicamente-csa@bcb.gov.br5204000053039865406175.005802BR5921ORGANICAMENTE%20CSA6009SAO%20PAULO62070503***6304CA4D" readonly aria-label="Chave Pix para Pagamento">
+                <button type="button" id="pix-copy-btn" class="btn btn-pix-copy">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>Copiar Pix</span>
+                </button>
+              </div>
+              <span id="pix-copy-feedback" class="pix-copy-feedback-text"></span>
+            </div>
+          </div>
+          
+          <div class="whatsapp-prompt-box">
+            <a href="#" id="whatsapp-submit-btn" class="btn btn-whatsapp" target="_blank">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.96 9.96 0 0 0 1.37 5.037L2 22l5.135-1.348a9.921 9.921 0 0 0 4.873 1.28h.005c5.507 0 9.99-4.478 9.99-9.985 0-2.67-1.04-5.18-2.93-7.07A9.923 9.923 0 0 0 12.012 2zm5.727 14.043c-.314.888-1.57 1.637-2.172 1.706-.575.066-1.314.12-3.874-.935-3.272-1.35-5.328-4.664-5.492-4.884-.164-.22-1.328-1.764-1.328-3.364 0-1.6 1.002-2.385 1.362-2.75.295-.3.655-.375.88-.375.225 0 .448.002.642.01.2.01.463-.075.724.55.263.626.902 2.203.98 2.36.08.158.132.343.028.552-.104.21-.157.34-.312.52-.155.18-.328.403-.467.54-.155.153-.317.32-.136.63.18.31.802 1.322 1.722 2.143.92.82 1.696 1.07 2.022 1.233.327.164.518.14.713-.082.195-.223.85-1.002.977-1.25.127-.247.253-.206.423-.143.17.063 1.085.512 1.272.605.188.093.313.14.36.222.046.083.046.48-.268 1.368z"/></svg>
+              Enviar Comprovante
+            </a>
+          </div>
+        </div>
+      </section>
+
+    </div>
+    
+    <!-- Configuração da URL do App Script para o desenvolvedor -->
+    <script>
+      // Insira a URL do seu Web App do Google Apps Script aqui para gravação automática em planilha.
+      window.GOOGLE_SHEETS_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby_4SwWl4L3oppCu15hOZjG1Mr0R8j_gBwXLiu8d5sbCqhNFT_LQ_kyn_Hk_JVGLYJQPA/exec";
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
