@@ -43,7 +43,20 @@ export default async function handler(req, res) {
       throw new Error(`Erro ao acessar planilha Google: ${errText}`);
     }
 
-    const planData = await sheetsRes.json();
+    const responseText = await sheetsRes.text();
+    const contentType = sheetsRes.headers.get('content-type') || '';
+
+    if (!contentType.includes('application/json')) {
+      console.error('Resposta não-JSON do Google Sheets:', responseText.slice(0, 500));
+      throw new Error('A planilha Google (Web App) retornou uma página de erro (HTML) em vez de JSON. Verifique se a variável GOOGLE_SHEETS_WEBAPP_URL na Vercel termina com "/exec" e se no Apps Script a implantação foi configurada para "Quem tem acesso: Qualquer pessoa" (Anyone).');
+    }
+
+    let planData;
+    try {
+      planData = JSON.parse(responseText);
+    } catch (e) {
+      throw new Error('Erro ao processar JSON retornado pela planilha Google.');
+    }
 
     if (planData.result === 'error') {
       throw new Error(`Erro retornado pela planilha: ${planData.message}`);
