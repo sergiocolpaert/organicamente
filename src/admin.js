@@ -6,8 +6,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Estado Global do Painel
   let subscribers = [];
   let filteredSubscribers = [];
-  let currentFilter = 'all'; // 'all', 'bruno', 'russo', 'terca', 'quarta', 'pago', 'atrasado'
+  let currentFilter = 'all'; 
   let searchQuery = '';
+  let selectedSubscriber = null; // Guarda o assinante selecionado atualmente
 
   // Seletores DOM - Autenticação
   const loginContainer = document.getElementById('login-container');
@@ -34,41 +35,83 @@ document.addEventListener('DOMContentLoaded', () => {
   const distBrunoBar = document.getElementById('dist-bruno-bar');
   const distRussoBar = document.getElementById('dist-russo-bar');
 
-  // Seletores DOM - Side Drawer (Gaveta)
-  const sideDrawer = document.getElementById('side-drawer');
-  const btnCloseDrawer = document.getElementById('btn-close-drawer');
-  const drawerClientName = document.getElementById('drawer-client-name');
-  const drawerClientStatus = document.getElementById('drawer-client-status');
-  const dCpf = document.getElementById('d-cpf');
-  const dEmail = document.getElementById('d-email');
-  const dTelefone = document.getElementById('d-telefone');
-  const dDataHora = document.getElementById('d-datahora');
-  const dCesta = document.getElementById('d-cesta');
-  const dOvos = document.getElementById('d-ovos');
-  const dProdutor = document.getElementById('d-produtor');
-  const dDiaEntrega = document.getElementById('d-diaentrega');
-  const dEndereco = document.getElementById('d-endereco');
-  const dBairroRegiao = document.getElementById('d-bairro-regiao');
-  const dCep = document.getElementById('d-cep');
-  const dReferencia = document.getElementById('d-referencia');
-  const dHorario = document.getElementById('d-horario');
-  const dVizinho = document.getElementById('d-vizinho');
-  const dTotalMensal = document.getElementById('d-totalmensal');
-  const dPrimeiroPagamento = document.getElementById('d-primeiropagamento');
-  const dFormaPagamento = document.getElementById('d-forma-pagamento');
-  const dVencimento = document.getElementById('d-vencimento');
-  const dAsaasStatus = document.getElementById('d-asaas-status');
-  const dLinkFatura = document.getElementById('d-link-fatura');
-  const dRowInvoice = document.getElementById('d-row-invoice');
-  const dObservacoes = document.getElementById('d-observacoes');
-  const btnCopyAddress = document.getElementById('btn-copy-address');
-  const linkMaps = document.getElementById('link-maps');
-  const btnDrawerWhatsapp = document.getElementById('btn-drawer-whatsapp');
+  // Seletores DOM - Novo Assinante
+  const btnNewSubscriber = document.getElementById('btn-new-subscriber');
+  const newSubscriberModal = document.getElementById('new-subscriber-modal');
+  const btnCloseNewModal = document.getElementById('btn-close-new-modal');
+  const newSubscriberForm = document.getElementById('new-subscriber-form');
+  const btnNewCancel = document.getElementById('btn-new-cancel');
+
+  // Seletores DOM - Modal Detalhes/Edição
+  const detailsModal = document.getElementById('details-modal');
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const modalClientName = document.getElementById('modal-client-name');
+  const modalClientStatus = document.getElementById('modal-client-status');
+  const modalTabs = document.querySelector('.modal-tabs');
+  const modalTabButtons = document.querySelectorAll('.modal-tab-btn');
+  const modalBodies = document.querySelectorAll('.modal-body');
+
+  // Seletores DOM - Visualização Detalhes
+  const mCpf = document.getElementById('m-cpf');
+  const mEmail = document.getElementById('m-email');
+  const mTelefone = document.getElementById('m-telefone');
+  const mDataHora = document.getElementById('m-datahora');
+  const mCesta = document.getElementById('m-cesta');
+  const mOvos = document.getElementById('m-ovos');
+  const mProdutor = document.getElementById('m-produtor');
+  const mDiaEntrega = document.getElementById('m-diaentrega');
+  const mEndereco = document.getElementById('m-endereco');
+  const mBairroRegiao = document.getElementById('m-bairro-regiao');
+  const mCep = document.getElementById('m-cep');
+  const mReferencia = document.getElementById('m-referencia');
+  const mHorario = document.getElementById('m-horario');
+  const mVizinho = document.getElementById('m-vizinho');
+  const mTotalMensal = document.getElementById('m-totalmensal');
+  const mPrimeiroPagamento = document.getElementById('m-primeiropagamento');
+  const mFormaPagamento = document.getElementById('m-forma-pagamento');
+  const mVencimento = document.getElementById('m-vencimento');
+  const mAsaasStatus = document.getElementById('m-asaas-status');
+  const mAsaasBox = document.getElementById('m-asaas-box');
+  const mLinkFatura = document.getElementById('m-link-fatura');
+  const mRowInvoice = document.getElementById('m-row-invoice');
+  const mObservacoes = document.getElementById('m-observacoes');
+  const btnModalCopyAddress = document.getElementById('btn-modal-copy-address');
+  const modalLinkMaps = document.getElementById('modal-link-maps');
+  const modalBtnWhatsapp = document.getElementById('modal-btn-whatsapp');
+
+  // Seletores DOM - Edição
+  const editSubscriberForm = document.getElementById('edit-subscriber-form');
+  const editOriginalCpf = document.getElementById('edit-original-cpf');
+  const editOriginalDataHora = document.getElementById('edit-original-datahora');
+  const modalViewFooter = document.getElementById('modal-view-footer');
+  const modalEditFooter = document.getElementById('modal-edit-footer');
+  const btnModalEdit = document.getElementById('btn-modal-edit');
+  const btnModalDelete = document.getElementById('btn-modal-delete');
+  const btnEditCancel = document.getElementById('btn-edit-cancel');
+  const btnEditSave = document.getElementById('btn-edit-save');
+
+  // Seletores DOM - Confirmação Exclusão
+  const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+  const deleteClientName = document.getElementById('delete-client-name');
+  const btnDeleteCancel = document.getElementById('btn-delete-cancel');
+  const btnDeleteConfirm = document.getElementById('btn-delete-confirm');
 
   // Inicializa os ícones do Lucide
   if (window.lucide) {
     window.lucide.createIcons();
   }
+
+  // Preços CSA padrão para cálculos reativos nos cadastros e edições
+  const pricesConfig = {
+    cesta: {
+      'Cesta Família': 180.0,
+      'Cesta Individual': 130.0,
+      'Cesta Quinzenal': 90.0,
+      'Entrega Avulsa (Unitária)': 45.0
+    },
+    eggCostPerDozen: 16.0,
+    adesao: 35.0
+  };
 
   // ==========================================================================
   // 1. GERENCIAMENTO DE SESSÃO & LOGIN
@@ -77,18 +120,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function checkSession() {
     const token = localStorage.getItem('organicamente_admin_token');
     if (token) {
-      // Exibe dashboard e oculta tela de login
       loginContainer.classList.add('hidden');
       adminDashboard.classList.remove('hidden');
       fetchData();
     } else {
-      // Exibe login e oculta dashboard
       loginContainer.classList.remove('hidden');
       adminDashboard.classList.add('hidden');
     }
   }
 
-  // Evento de Login
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -110,9 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const contentType = res.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          console.error('Retorno não-JSON de login:', res.status, res.statusText);
           if (res.status === 404) {
-            showLoginError('Servidor administrativo não encontrado (Erro 404). Se estiver rodando localmente, utilize "vercel dev" para iniciar.');
+            showLoginError('Servidor não encontrado (Erro 404). Se estiver rodando localmente, utilize "vercel dev".');
           } else {
             showLoginError(`Resposta inválida do servidor (Erro ${res.status}).`);
           }
@@ -144,7 +183,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
   }
 
-  // Evento de Logout
   if (btnLogout) {
     btnLogout.addEventListener('click', () => {
       localStorage.removeItem('organicamente_admin_token');
@@ -153,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // 2. BUSCA DE DADOS (FETCH)
+  // 2. BUSCA DE DADOS (GET)
   // ==========================================================================
   
   async function fetchData() {
@@ -174,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (res.status === 401) {
-        // Token inválido ou expirado
         localStorage.removeItem('organicamente_admin_token');
         checkSession();
         return;
@@ -182,7 +219,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const contentType = res.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        console.error('Retorno não-JSON de assinaturas:', res.status, res.statusText);
         throw new Error(`Resposta inválida do servidor (Erro ${res.status})`);
       }
 
@@ -190,16 +226,14 @@ document.addEventListener('DOMContentLoaded', () => {
         let errMsg = 'Falha ao obter lista de assinantes';
         try {
           const errData = await res.json();
-          if (errData && errData.error) {
-            errMsg = errData.error;
-          }
+          if (errData && errData.error) errMsg = errData.error;
         } catch (_) {}
         throw new Error(errMsg);
       }
 
       subscribers = await res.json();
       
-      // Inverte para exibir os mais recentes no topo
+      // Ordenação mais recente no topo
       subscribers.reverse();
 
       applyFilters();
@@ -267,7 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
     tableBody.innerHTML = '';
 
     filteredSubscribers.forEach((sub, idx) => {
-      // Iniciais para o Avatar
       const initials = (sub.nome || 'U')
         .split(' ')
         .slice(0, 2)
@@ -275,7 +308,6 @@ document.addEventListener('DOMContentLoaded', () => {
         .join('')
         .toUpperCase();
 
-      // Badge de Status do Asaas
       const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
       let statusClass = 'desconhecido';
       let statusLabel = 'Sem Registro';
@@ -333,22 +365,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tableRowsCount.textContent = `Mostrando ${filteredSubscribers.length} de ${subscribers.length} assinantes`;
 
-    // Event listeners para os botões "Ver Detalhes"
     const viewButtons = tableBody.querySelectorAll('.btn-action-view');
     viewButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', () => {
         const idx = parseInt(btn.getAttribute('data-index'), 10);
-        openDrawer(filteredSubscribers[idx]);
+        openDetailsModal(filteredSubscribers[idx]);
       });
     });
 
     if (window.lucide) window.lucide.createIcons();
   }
 
-  // Lógica de Filtros e Busca combinados
   function applyFilters() {
     filteredSubscribers = subscribers.filter(sub => {
-      // Filtro de Busca
       const searchMatch = !searchQuery || 
         (sub.nome || '').toLowerCase().includes(searchQuery) ||
         (sub.email || '').toLowerCase().includes(searchQuery) ||
@@ -356,7 +385,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!searchMatch) return false;
 
-      // Filtro por Abas
       if (currentFilter === 'all') return true;
       
       const produtorLower = (sub.produtor || '').toLowerCase();
@@ -377,7 +405,6 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable();
   }
 
-  // Listener da Busca
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value.trim().toLowerCase();
@@ -399,7 +426,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Listener das Abas
   if (filterTabsContainer) {
     filterTabsContainer.addEventListener('click', (e) => {
       const btn = e.target.closest('.tab-btn');
@@ -427,11 +453,9 @@ document.addEventListener('DOMContentLoaded', () => {
     subscribers.forEach(sub => {
       const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
       
-      // Contagem de Assinantes (Ativos são todos que não estão inadimplentes e cancelados)
       if (asaasStatus !== 'OVERDUE' && asaasStatus !== 'CANCELLED') {
         activeCount++;
         
-        // Conversão de valor "R$ 180,00" -> 180.00
         const valorMensalLimpo = parseFloat((sub.totalMensal || '')
           .replace(/[^\d,]/g, '')
           .replace(',', '.'));
@@ -441,12 +465,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      // Cobranças Pendentes no Asaas
       if (asaasStatus === 'PENDING') {
         pendingCount++;
       }
 
-      // Distribuição por Produtor
       const produtorLower = (sub.produtor || '').toLowerCase();
       if (produtorLower.includes('bruno')) {
         brunoCount++;
@@ -455,12 +477,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Atualiza KPIs no DOM
     kpiMrr.textContent = formatMoney(mrrTotal);
     kpiActives.textContent = activeCount;
     kpiPending.textContent = pendingCount;
 
-    // Atualiza Gráfico de Distribuição
     const totalProdutores = brunoCount + russoCount;
     if (totalProdutores > 0) {
       const brunoPct = Math.round((brunoCount / totalProdutores) * 100);
@@ -480,11 +500,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // 5. DETALHES NA GAVETA (SIDE DRAWER)
+  // 5. ABERTURA DO MODAL DETALHES & ABAS INTERNALIZADAS
   // ==========================================================================
   
-  function openDrawer(sub) {
-    drawerClientName.textContent = sub.nome;
+  function openDetailsModal(sub) {
+    selectedSubscriber = sub;
+    modalClientName.textContent = sub.nome;
+
+    // Reset para modo visualização
+    exitEditMode();
+
+    // Reset de abas
+    modalTabButtons.forEach(btn => btn.classList.remove('active'));
+    modalTabButtons[0].classList.add('active');
+    modalBodies.forEach(body => body.classList.remove('active-tab'));
+    modalBodies[0].classList.add('active-tab');
 
     // Badge do Status Geral
     const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
@@ -505,122 +535,532 @@ document.addEventListener('DOMContentLoaded', () => {
       statusLabel = 'Pendência Asaas';
     }
 
-    drawerClientStatus.className = `badge ${statusClass}`;
-    drawerClientStatus.textContent = statusLabel;
+    modalClientStatus.className = `badge ${statusClass}`;
+    modalClientStatus.textContent = statusLabel;
 
     // Dados Pessoais
-    dCpf.textContent = formatCPF(sub.cpf);
-    dEmail.textContent = sub.email;
-    dTelefone.textContent = formatPhone(sub.telefone);
-    dDataHora.textContent = sub.dataHora ? new Date(sub.dataHora).toLocaleString('pt-BR') : 'Não informada';
+    mCpf.textContent = formatCPF(sub.cpf);
+    mEmail.textContent = sub.email;
+    mTelefone.textContent = formatPhone(sub.telefone);
+    mDataHora.textContent = sub.dataHora ? new Date(sub.dataHora).toLocaleString('pt-BR') : 'Não informada';
 
     // Detalhes Cesta
-    dCesta.textContent = sub.cestaTipo + ' (' + sub.cestaValor + ')';
-    dOvos.textContent = sub.ovosTipo + ' (' + sub.ovosValor + ')';
-    dProdutor.textContent = sub.produtor;
-    dDiaEntrega.textContent = sub.diaEntrega;
+    mCesta.textContent = sub.cestaTipo + ' (' + sub.cestaValor + ')';
+    mOvos.textContent = sub.ovosTipo + ' (' + sub.ovosValor + ')';
+    mProdutor.textContent = sub.produtor;
+    mDiaEntrega.textContent = sub.diaEntrega;
 
     // Logística
-    dEndereco.textContent = sub.endereco;
-    dBairroRegiao.textContent = `${sub.bairro} / ${sub.regiao}`;
-    dCep.textContent = formatCEP(sub.cep);
-    dReferencia.textContent = sub.pontoReferencia;
-    dHorario.textContent = sub.horario || 'Horário Comercial';
-    dVizinho.textContent = sub.vizinho;
+    mEndereco.textContent = sub.endereco;
+    mBairroRegiao.textContent = `${sub.bairro} / ${sub.regiao}`;
+    mCep.textContent = formatCEP(sub.cep);
+    mReferencia.textContent = sub.pontoReferencia || 'Não informado';
+    mHorario.textContent = sub.horario || 'Horário Comercial';
+    mVizinho.textContent = sub.vizinho || 'Deixar no local';
 
     // Financeiro
-    dTotalMensal.textContent = sub.totalMensal;
-    dPrimeiroPagamento.textContent = sub.primeiroPagamento;
-    dFormaPagamento.textContent = sub.formaPagamento || 'PIX';
+    mTotalMensal.textContent = sub.totalMensal;
+    mPrimeiroPagamento.textContent = sub.primeiroPagamento;
+    mFormaPagamento.textContent = sub.formaPagamento || 'PIX';
     
     if (sub.asaas && sub.asaas.dueDate) {
-      dVencimento.textContent = new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR');
+      mVencimento.textContent = new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR');
     } else {
-      dVencimento.textContent = 'Não gerado';
+      mVencimento.textContent = 'Não gerado';
     }
 
     // Status Asaas
-    let asaasLabel = 'Nenhum registro de faturamento ativo.';
+    let asaasLabel = 'Nenhum faturamento registrado.';
     if (sub.asaas) {
       if (sub.asaas.status === 'RECEIVED' || sub.asaas.status === 'CONFIRMED') {
-        asaasLabel = 'Última fatura confirmada (Paga)';
+        asaasLabel = 'Última fatura paga';
       } else if (sub.asaas.status === 'PENDING') {
-        asaasLabel = `Aguardando pagamento do Pix/Boleto. Vencimento: ${new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}`;
+        asaasLabel = `Pendente. Vencimento: ${new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}`;
       } else if (sub.asaas.status === 'OVERDUE') {
-        asaasLabel = 'Atrasado: Cobrança Asaas vencida e não compensada.';
+        asaasLabel = 'Atrasado: Cobrança vencida no Asaas.';
       } else if (sub.asaas.status === 'SEM_CLIENTE') {
-        asaasLabel = 'Erro: Cliente não foi cadastrado no painel do Asaas.';
+        asaasLabel = 'Cliente não cadastrado no Asaas.';
       } else if (sub.asaas.status === 'SEM_COBRANCA') {
-        asaasLabel = 'Cliente cadastrado no Asaas, mas sem cobrança ativa encontrada.';
+        asaasLabel = 'Cliente no Asaas, sem cobrança ativa.';
       }
     }
-    dAsaasStatus.textContent = asaasLabel;
-    dAsaasStatus.className = `asaas-desc-text ${statusClass}`;
+    mAsaasStatus.textContent = asaasLabel;
+    mAsaasStatus.className = `asaas-desc-text ${statusClass}`;
 
-    // Link Fatura Asaas
     if (sub.asaas && sub.asaas.invoiceUrl) {
-      dRowInvoice.classList.remove('hidden');
-      dLinkFatura.href = sub.asaas.invoiceUrl;
+      mRowInvoice.classList.remove('hidden');
+      mLinkFatura.href = sub.asaas.invoiceUrl;
     } else {
-      dRowInvoice.classList.add('hidden');
+      mRowInvoice.classList.add('hidden');
     }
 
     // Observações
-    dObservacoes.textContent = sub.observacoes || 'Nenhuma observação informada.';
+    mObservacoes.textContent = sub.observacoes || 'Nenhuma observação informada.';
 
     // Botão de Copiar Endereço
-    btnCopyAddress.onclick = () => {
+    btnModalCopyAddress.onclick = () => {
       const fullAddressText = `${sub.endereco} - ${sub.bairro}, Rio de Janeiro - RJ, CEP: ${formatCEP(sub.cep)}`;
       navigator.clipboard.writeText(fullAddressText).then(() => {
-        const originalBtnText = btnCopyAddress.innerHTML;
-        btnCopyAddress.innerHTML = '<i data-lucide="check"></i> <span>Endereço Copiado!</span>';
+        const originalText = btnModalCopyAddress.innerHTML;
+        btnModalCopyAddress.innerHTML = '<i data-lucide="check"></i> <span>Copiado!</span>';
         if (window.lucide) window.lucide.createIcons();
         setTimeout(() => {
-          btnCopyAddress.innerHTML = originalBtnText;
+          btnModalCopyAddress.innerHTML = originalText;
           if (window.lucide) window.lucide.createIcons();
-        }, 2000);
+        }, 1500);
       });
     };
 
     // Link do Google Maps
     const mapsQuery = encodeURIComponent(`${sub.endereco}, ${sub.bairro}, Rio de Janeiro - RJ`);
-    linkMaps.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+    modalLinkMaps.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
 
-    // WhatsApp Direto com mensagem personalizada
+    // WhatsApp Direto
     const phoneClean = (sub.telefone || '').replace(/\D/g, '');
     const primeirNome = (sub.nome || '').split(' ')[0];
     
-    let zapText = `Olá, ${primeirNome}! 🌱 Tudo bem?\n\nAqui é a equipe do Organicamente. Passando para confirmar as informações de sua assinatura e entrega:\n\n` +
+    let zapText = `Olá, ${primeirNome}! 🌱 Tudo bem?\n\nAqui é a equipe do Organicamente. Passando para confirmar as informações de sua assinatura:\n\n` +
       `🧺 *Cesta:* ${sub.cestaTipo}\n` +
       `🥚 *Ovos:* ${sub.ovosTipo}\n` +
       `🌾 *Produtor:* ${sub.produtor} (${sub.diaEntrega})\n` +
       `🚚 *Endereço:* ${sub.endereco}\n`;
 
     if (asaasStatus === 'PENDING') {
-      zapText += `\n*Nota:* Vimos que a sua cobrança de faturamento de adesão inicial ainda está pendente. Caso precise do link de pagamento para concluir o cadastro, segue:\n🔗 ${sub.asaas.invoiceUrl || 'Acesse o site'}\n`;
+      zapText += `\n*Nota:* A sua cobrança inicial ainda está pendente. Segue o link para pagamento:\n🔗 ${sub.asaas.invoiceUrl || 'Acesse o site'}\n`;
     }
 
-    zapText += `\nQualquer dúvida, estamos à disposição por aqui! 😊`;
-    
-    btnDrawerWhatsapp.href = `https://wa.me/55${phoneClean}?text=${encodeURIComponent(zapText)}`;
+    zapText += `\nQualquer dúvida, estamos à disposição! 😊`;
+    modalBtnWhatsapp.href = `https://wa.me/55${phoneClean}?text=${encodeURIComponent(zapText)}`;
 
-    // Abre a gaveta
-    sideDrawer.classList.add('active');
+    // Abre o Modal
+    detailsModal.classList.add('active');
     if (window.lucide) window.lucide.createIcons();
   }
 
-  // Fechar Gaveta
-  if (btnCloseDrawer) {
-    btnCloseDrawer.addEventListener('click', () => {
-      sideDrawer.classList.remove('active');
+  // Listener para alternar Abas do Modal
+  if (modalTabs) {
+    modalTabs.addEventListener('click', (e) => {
+      const btn = e.target.closest('.modal-tab-btn');
+      if (!btn) return;
+
+      modalTabButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const targetTab = btn.getAttribute('data-tab');
+      modalBodies.forEach(body => {
+        if (body.id === targetTab) {
+          body.classList.add('active-tab');
+        } else {
+          body.classList.remove('active-tab');
+        }
+      });
     });
   }
 
-  // Fecha clicando fora da Gaveta
-  if (sideDrawer) {
-    sideDrawer.addEventListener('click', (e) => {
-      if (e.target === sideDrawer) {
-        sideDrawer.classList.remove('active');
+  // Fechar Modal
+  if (btnCloseModal) {
+    btnCloseModal.addEventListener('click', () => {
+      detailsModal.classList.remove('active');
+    });
+  }
+
+  // Fechar clicando fora do Modal
+  if (detailsModal) {
+    detailsModal.addEventListener('click', (e) => {
+      if (e.target === detailsModal) {
+        detailsModal.classList.remove('active');
+      }
+    });
+  }
+
+  // ==========================================================================
+  // 6. LÓGICA DE CADASTRO (CRIAR)
+  // ==========================================================================
+  
+  if (btnNewSubscriber) {
+    btnNewSubscriber.addEventListener('click', () => {
+      newSubscriberForm.reset();
+      newSubscriberModal.classList.add('active');
+      if (window.lucide) window.lucide.createIcons();
+    });
+  }
+
+  if (btnCloseNewModal) {
+    btnCloseNewModal.addEventListener('click', () => {
+      newSubscriberModal.classList.remove('active');
+    });
+  }
+
+  if (btnNewCancel) {
+    btnNewCancel.addEventListener('click', () => {
+      newSubscriberModal.classList.remove('active');
+    });
+  }
+
+  if (newSubscriberModal) {
+    newSubscriberModal.addEventListener('click', (e) => {
+      if (e.target === newSubscriberModal) {
+        newSubscriberModal.classList.remove('active');
+      }
+    });
+  }
+
+  // Cálculos automáticos reativos no formulário de cadastro
+  function setupReactiveCalculations(formPrefix) {
+    const cestaSelect = document.getElementById(`${formPrefix}-cestaTipo`);
+    const cestaValorInput = document.getElementById(`${formPrefix}-cestaValor`);
+    const ovosSelect = document.getElementById(`${formPrefix}-ovosTipo`);
+    const ovosValorInput = document.getElementById(`${formPrefix}-ovosValor`);
+    const totalInput = document.getElementById(`${formPrefix}-totalmensal`);
+    const primeiroInput = document.getElementById(`${formPrefix}-primeiropagamento`);
+
+    function calculate() {
+      const cestaVal = cestaSelect.value;
+      const ovosVal = ovosSelect.value;
+
+      // Cesta valor base
+      let cestaPrice = pricesConfig.cesta[cestaVal] || 0;
+      cestaValorInput.value = formatMoneyPlain(cestaPrice);
+
+      // Quantidade de entregas
+      let deliveries = 4;
+      if (cestaVal === 'Cesta Quinzenal') {
+        deliveries = 2;
+      } else if (cestaVal === 'Entrega Avulsa (Unitária)') {
+        deliveries = 1;
+      }
+
+      // Ovos valor
+      let eggsPrice = 0;
+      if (ovosVal.includes('1 dúzia')) eggsPrice = 1 * deliveries * pricesConfig.eggCostPerDozen;
+      else if (ovosVal.includes('2 dúzias')) eggsPrice = 2 * deliveries * pricesConfig.eggCostPerDozen;
+      else if (ovosVal.includes('3 dúzias')) eggsPrice = 3 * deliveries * pricesConfig.eggCostPerDozen;
+      
+      ovosValorInput.value = formatMoneyPlain(eggsPrice);
+
+      // Totais
+      const totalMensal = cestaVal === 'Entrega Avulsa (Unitária)' ? 0 : (cestaPrice + eggsPrice);
+      totalInput.value = formatMoneyPlain(totalMensal);
+
+      // Primeiro pagamento = Cesta + Ovos + Adesão
+      const primeiroPagamento = cestaPrice + eggsPrice + pricesConfig.adesao;
+      primeiroInput.value = formatMoneyPlain(primeiroPagamento);
+    }
+
+    if (cestaSelect && ovosSelect) {
+      cestaSelect.addEventListener('change', calculate);
+      ovosSelect.addEventListener('change', calculate);
+    }
+  }
+
+  setupReactiveCalculations('new');
+  setupReactiveCalculations('edit');
+
+  // Submit Cadastro
+  if (newSubscriberForm) {
+    newSubscriberForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('btn-new-submit');
+      submitBtn.disabled = true;
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span>Gravando...</span>';
+
+      const token = localStorage.getItem('organicamente_admin_token');
+      
+      // Coleta dados
+      const data = {
+        nome: document.getElementById('new-nome').value.trim(),
+        email: document.getElementById('new-email').value.trim(),
+        telefone: document.getElementById('new-telefone').value.trim(),
+        cpf: document.getElementById('new-cpf').value.trim(),
+        regiao: document.getElementById('new-regiao').value.trim(),
+        bairro: document.getElementById('new-bairro').value.trim(),
+        produtor: document.getElementById('new-produtor').value,
+        diaEntrega: document.getElementById('new-diaentrega').value,
+        cestaTipo: document.getElementById('new-cestaTipo').value,
+        cestaValor: document.getElementById('new-cestaValor').value,
+        ovosTipo: document.getElementById('new-ovosTipo').value,
+        ovosValor: document.getElementById('new-ovosValor').value,
+        cep: document.getElementById('new-cep').value.trim(),
+        endereco: document.getElementById('new-endereco').value.trim(),
+        pontoReferencia: document.getElementById('new-referencia').value.trim() || 'Não informado',
+        horario: document.getElementById('new-horario').value.trim() || 'Horário Comercial',
+        vizinho: document.getElementById('new-vizinho').value.trim() || 'Deixar no local',
+        comoConheceu: document.getElementById('new-comoConheceu').value.trim() || 'Não informado',
+        observacoes: document.getElementById('new-observacoes').value.trim() || 'Nenhuma',
+        totalMensal: document.getElementById('new-totalmensal').value,
+        primeiroPagamento: document.getElementById('new-primeiropagamento').value,
+        formaPagamento: document.getElementById('new-forma-pagamento').value
+      };
+
+      try {
+        const res = await fetch('/api/admin/assinaturas', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Erro ao cadastrar novo assinante.');
+        }
+
+        alert('Assinante cadastrado com sucesso!');
+        newSubscriberModal.classList.remove('active');
+        fetchData(); // Recarrega
+      } catch (err) {
+        console.error(err);
+        alert(`Falha no cadastro: ${err.message}`);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
+  // ==========================================================================
+  // 7. LÓGICA DE EDIÇÃO (UPDATE)
+  // ==========================================================================
+  
+  if (btnModalEdit) {
+    btnModalEdit.addEventListener('click', () => {
+      enterEditMode();
+    });
+  }
+
+  if (btnEditCancel) {
+    btnEditCancel.addEventListener('click', () => {
+      exitEditMode();
+    });
+  }
+
+  function enterEditMode() {
+    if (!selectedSubscriber) return;
+
+    // Altera título e esconde visualização
+    modalClientName.textContent = `Editar Assinante`;
+    modalClientStatus.classList.add('hidden');
+    modalTabs.classList.add('hidden');
+    modalBodies.forEach(body => body.classList.remove('active-tab'));
+    
+    // Mostra Form de Edição e botões de edição
+    editSubscriberForm.classList.remove('hidden');
+    modalViewFooter.classList.add('hidden');
+    modalEditFooter.classList.remove('hidden');
+
+    // Popula formulário de edição
+    editOriginalCpf.value = selectedSubscriber.cpf;
+    editOriginalDataHora.value = selectedSubscriber.dataHora || '';
+    
+    document.getElementById('edit-nome').value = selectedSubscriber.nome || '';
+    document.getElementById('edit-cpf').value = selectedSubscriber.cpf || '';
+    document.getElementById('edit-email').value = selectedSubscriber.email || '';
+    document.getElementById('edit-telefone').value = selectedSubscriber.telefone || '';
+    document.getElementById('edit-endereco').value = selectedSubscriber.endereco || '';
+    document.getElementById('edit-cep').value = selectedSubscriber.cep || '';
+    document.getElementById('edit-bairro').value = selectedSubscriber.bairro || '';
+    document.getElementById('edit-regiao').value = selectedSubscriber.regiao || '';
+    document.getElementById('edit-referencia').value = selectedSubscriber.pontoReferencia || '';
+    document.getElementById('edit-vizinho').value = selectedSubscriber.vizinho || '';
+    document.getElementById('edit-horario').value = selectedSubscriber.horario || '';
+    document.getElementById('edit-comoConheceu').value = selectedSubscriber.comoConheceu || '';
+    document.getElementById('edit-observacoes').value = selectedSubscriber.observacoes || '';
+    
+    // Selects
+    document.getElementById('edit-produtor').value = selectedSubscriber.produtor || 'Russo e Família';
+    document.getElementById('edit-diaentrega').value = selectedSubscriber.diaEntrega || 'Quarta-feira';
+    document.getElementById('edit-cestaTipo').value = selectedSubscriber.cestaTipo || 'Cesta Individual';
+    document.getElementById('edit-ovosTipo').value = selectedSubscriber.ovosTipo || 'Sem Ovos';
+    document.getElementById('edit-forma-pagamento').value = selectedSubscriber.formaPagamento || 'PIX';
+
+    // Valores
+    document.getElementById('edit-cestaValor').value = selectedSubscriber.cestaValor || 'R$ 0,00';
+    document.getElementById('edit-ovosValor').value = selectedSubscriber.ovosValor || 'R$ 0,00';
+    document.getElementById('edit-totalmensal').value = selectedSubscriber.totalMensal || 'R$ 0,00';
+    document.getElementById('edit-primeiropagamento').value = selectedSubscriber.primeiroPagamento || 'R$ 0,00';
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function exitEditMode() {
+    if (!selectedSubscriber) return;
+
+    modalClientName.textContent = selectedSubscriber.nome;
+    modalClientStatus.classList.remove('hidden');
+    modalTabs.classList.remove('hidden');
+    
+    // Volta abas ativa
+    const activeTabId = modalTabs.querySelector('.modal-tab-btn.active').getAttribute('data-tab');
+    document.getElementById(activeTabId).classList.add('active-tab');
+
+    // Oculta Formulário
+    editSubscriberForm.classList.add('hidden');
+    modalViewFooter.classList.remove('hidden');
+    modalEditFooter.classList.add('hidden');
+    
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  // Evento Salvar Edição
+  if (btnEditSave) {
+    btnEditSave.addEventListener('click', async () => {
+      // Validações básicas de HTML
+      if (!editSubscriberForm.reportValidity()) return;
+
+      btnEditSave.disabled = true;
+      const originalText = btnEditSave.innerHTML;
+      btnEditSave.innerHTML = '<span>Salvando...</span>';
+
+      const token = localStorage.getItem('organicamente_admin_token');
+
+      // Coleta dados
+      const updatedData = {
+        nome: document.getElementById('edit-nome').value.trim(),
+        email: document.getElementById('edit-email').value.trim(),
+        telefone: document.getElementById('edit-telefone').value.trim(),
+        cpf: editOriginalCpf.value, // CPF atua como chave
+        regiao: document.getElementById('edit-regiao').value.trim(),
+        bairro: document.getElementById('edit-bairro').value.trim(),
+        produtor: document.getElementById('edit-produtor').value,
+        diaEntrega: document.getElementById('edit-diaentrega').value,
+        cestaTipo: document.getElementById('edit-cestaTipo').value,
+        cestaValor: document.getElementById('edit-cestaValor').value,
+        ovosTipo: document.getElementById('edit-ovosTipo').value,
+        ovosValor: document.getElementById('edit-ovosValor').value,
+        cep: document.getElementById('edit-cep').value.trim(),
+        endereco: document.getElementById('edit-endereco').value.trim(),
+        pontoReferencia: document.getElementById('edit-referencia').value.trim() || 'Não informado',
+        horario: document.getElementById('edit-horario').value.trim() || 'Horário Comercial',
+        vizinho: document.getElementById('edit-vizinho').value.trim() || 'Deixar no local',
+        comoConheceu: document.getElementById('edit-comoConheceu').value.trim() || 'Não informado',
+        observacoes: document.getElementById('edit-observacoes').value.trim() || 'Nenhuma',
+        totalMensal: document.getElementById('edit-totalmensal').value,
+        primeiroPagamento: document.getElementById('edit-primeiropagamento').value,
+        formaPagamento: document.getElementById('edit-forma-pagamento').value,
+        dataHora: editOriginalDataHora.value
+      };
+
+      try {
+        const res = await fetch('/api/admin/assinaturas', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(updatedData)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Erro ao salvar alterações.');
+        }
+
+        alert('Cadastro atualizado com sucesso!');
+        
+        // Atualiza objeto local e tabela imediatamente
+        selectedSubscriber = {
+          ...selectedSubscriber,
+          ...updatedData
+        };
+
+        // Atualiza no array principal
+        const idx = subscribers.findIndex(s => s.cpf === selectedSubscriber.cpf);
+        if (idx !== -1) {
+          subscribers[idx] = {
+            ...subscribers[idx],
+            ...updatedData
+          };
+        }
+
+        exitEditMode();
+        openDetailsModal(selectedSubscriber); // Recarrega visualização
+        applyFilters();
+        calculateKpis();
+      } catch (err) {
+        console.error(err);
+        alert(`Falha na atualização: ${err.message}`);
+      } finally {
+        btnEditSave.disabled = false;
+        btnEditSave.innerHTML = originalText;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
+  // ==========================================================================
+  // 8. LÓGICA DE EXCLUSÃO (DELETE)
+  // ==========================================================================
+  
+  if (btnModalDelete) {
+    btnModalDelete.addEventListener('click', () => {
+      if (!selectedSubscriber) return;
+      deleteClientName.textContent = selectedSubscriber.nome;
+      confirmDeleteModal.classList.add('active');
+    });
+  }
+
+  if (btnDeleteCancel) {
+    btnDeleteCancel.addEventListener('click', () => {
+      confirmDeleteModal.classList.remove('active');
+    });
+  }
+
+  if (confirmDeleteModal) {
+    confirmDeleteModal.addEventListener('click', (e) => {
+      if (e.target === confirmDeleteModal) {
+        confirmDeleteModal.classList.remove('active');
+      }
+    });
+  }
+
+  if (btnDeleteConfirm) {
+    btnDeleteConfirm.addEventListener('click', async () => {
+      if (!selectedSubscriber) return;
+
+      btnDeleteConfirm.disabled = true;
+      btnDeleteConfirm.textContent = 'Excluindo...';
+
+      const token = localStorage.getItem('organicamente_admin_token');
+      const cpfToDelete = selectedSubscriber.cpf;
+
+      try {
+        const res = await fetch('/api/admin/assinaturas', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ cpf: cpfToDelete })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Erro ao excluir assinante.');
+        }
+
+        alert('Assinante excluído com sucesso!');
+        
+        // Remove do array principal
+        subscribers = subscribers.filter(s => s.cpf !== cpfToDelete);
+
+        // Fecha modais
+        confirmDeleteModal.classList.remove('active');
+        detailsModal.classList.remove('active');
+
+        // Atualiza tabela
+        applyFilters();
+        calculateKpis();
+      } catch (err) {
+        console.error(err);
+        alert(`Falha na exclusão: ${err.message}`);
+      } finally {
+        btnDeleteConfirm.disabled = false;
+        btnDeleteConfirm.textContent = 'Sim, Excluir';
       }
     });
   }
@@ -629,6 +1069,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // HELPER FUNCTIONS (FORMATADORES)
   // ==========================================================================
   
+  function formatMoneyPlain(value) {
+    return `R$ ${value.toFixed(2).replace('.', ',')}`;
+  }
+
   function formatMoney(value) {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -666,6 +1110,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return cep;
   }
 
-  // Executa checagem de sessão ao carregar a página
+  // Checagem inicial
   checkSession();
 });
