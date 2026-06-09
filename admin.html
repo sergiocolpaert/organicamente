@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organicamente - Painel Administrativo</title>
+  
+  <!-- Fontes Premium -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Estilos dedicados -->
+  <link rel="stylesheet" href="/src/admin.css">
+  
+  <!-- CDN de Ícones Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- 1. TELA DE LOGIN (OCULTO SE LOGADO)        -->
+  <!-- ========================================== -->
+  <div id="login-container" class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="brand-logo">🌿</div>
+        <h2>Painel Organicamente</h2>
+        <p>Acesse o gerenciamento de assinaturas</p>
+      </div>
+      
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">Usuário</label>
+          <div class="input-wrapper">
+            <i data-lucide="user"></i>
+            <input type="text" id="username" name="username" required placeholder="Digite seu usuário">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Senha</label>
+          <div class="input-wrapper">
+            <i data-lucide="lock"></i>
+            <input type="password" id="password" name="password" required placeholder="Digite sua senha">
+          </div>
+        </div>
+        
+        <div id="login-error-msg" class="error-banner hidden">
+          <i data-lucide="alert-circle"></i>
+          <span>Usuário ou senha inválidos.</span>
+        </div>
+        
+        <button type="submit" class="btn-submit" id="btn-login">
+          <span>Entrar no Painel</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 2. PAINEL PRINCIPAL (EXIBE SE LOGADO)      -->
+  <!-- ========================================== -->
+  <div id="admin-dashboard" class="dashboard-wrapper hidden">
+    <!-- Header Principal -->
+    <header class="main-header">
+      <div class="header-logo">
+        <span class="logo-emoji">🌿</span>
+        <div class="logo-text">
+          <h1>Organicamente</h1>
+          <p>Painel Administrativo</p>
+        </div>
+      </div>
+      
+      <div class="user-control">
+        <span class="user-badge">
+          <i data-lucide="shield-check"></i>
+          <span>Administrador</span>
+        </span>
+        <button id="btn-logout" class="btn-logout" title="Sair do painel">
+          <i data-lucide="log-out"></i>
+          <span>Sair</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Área de Conteúdo -->
+    <main class="dashboard-content">
+      
+      <!-- Seção 1: Indicadores (KPIs) -->
+      <section class="kpi-grid">
+        <!-- KPI 1 -->
+        <div class="kpi-card">
+          <div class="kpi-icon color-1">
+            <i data-lucide="dollar-sign"></i>
+          </div>
+          <div class="kpi-data">
+            <h3>Faturamento Estimado</h3>
+            <div class="kpi-value" id="kpi-mrr">R$ 0,00</div>
+            <p class="kpi-sub">Mensalidade recorrente ativa</p>
+          </div>
+        </div>
+        
+        <!-- KPI 2 -->
+        <div class="kpi-card">
+          <div class="kpi-icon color-2">
+            <i data-lucide="users"></i>
+          </div>
+          <div class="kpi-data">
+            <h3>Assinantes Ativos</h3>
+            <div class="kpi-value" id="kpi-actives">0</div>
+            <p class="kpi-sub">Total de assinaturas registradas</p>
+          </div>
+        </div>
+        
+        <!-- KPI 3 -->
+        <div class="kpi-card">
+          <div class="kpi-icon color-3">
+            <i data-lucide="clock"></i>
+          </div>
+          <div class="kpi-data">
+            <h3>Aguardando Pagamento</h3>
+            <div class="kpi-value" id="kpi-pending">0</div>
+            <p class="kpi-sub">Cobranças pendentes no Asaas</p>
+          </div>
+        </div>
+
+        <!-- KPI 4 (Distribuição de Produtores) -->
+        <div class="kpi-card distribution-card">
+          <h3>Distribuição de Produtores</h3>
+          <div class="distribution-bars">
+            <div class="bar-item">
+              <div class="bar-label">
+                <span>Bruno</span>
+                <span id="dist-bruno-qty">0 (0%)</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill color-bruno" id="dist-bruno-bar" style="width: 0%;"></div>
+              </div>
+            </div>
+            <div class="bar-item">
+              <div class="bar-label">
+                <span>Russo</span>
+                <span id="dist-russo-qty">0 (0%)</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill color-russo" id="dist-russo-bar" style="width: 0%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Seção 2: Filtros e Tabela -->
+      <section class="table-section">
+        <div class="table-toolbar">
+          <!-- Filtro de Busca -->
+          <div class="search-box">
+            <i data-lucide="search"></i>
+            <input type="text" id="admin-search-input" placeholder="Buscar assinante por nome, e-mail ou CPF...">
+            <button id="clear-search-btn" class="clear-search hidden">&times;</button>
+          </div>
+          
+          <!-- Filtros Rápidos (Abas) -->
+          <div class="filter-tabs" id="filter-tabs-container">
+            <button class="tab-btn active" data-filter="all">Todos</button>
+            <button class="tab-btn" data-filter="bruno">Bruno</button>
+            <button class="tab-btn" data-filter="russo">Russo</button>
+            <button class="tab-btn" data-filter="terca">Terça</button>
+            <button class="tab-btn" data-filter="quarta">Quarta</button>
+            <button class="tab-btn" data-filter="pago">Pagos (Asaas)</button>
+            <button class="tab-btn" data-filter="atrasado">Atrasados (Asaas)</button>
+          </div>
+        </div>
+
+        <!-- Tabela -->
+        <div class="table-container">
+          <table id="subscribers-table">
+            <thead>
+              <tr>
+                <th>Assinante</th>
+                <th>Cesta / Opcional</th>
+                <th>Produtor / Dia</th>
+                <th>Faturamento</th>
+                <th>Status (Asaas)</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <!-- Renderização dinâmica via JS -->
+              <tr>
+                <td colspan="6" class="table-loading">
+                  <div class="skeleton-row">Carregando dados das assinaturas...</div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Rodapé da Tabela -->
+        <div class="table-footer">
+          <span id="table-rows-count">Mostrando 0 assinantes</span>
+          <button id="btn-refresh" class="btn-refresh">
+            <i data-lucide="rotate-cw"></i>
+            <span>Atualizar Dados</span>
+          </button>
+        </div>
+      </section>
+      
+    </main>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. SIDE DRAWER (GAVETA DE DETALHES)        -->
+  <!-- ========================================== -->
+  <div id="side-drawer" class="drawer-backdrop">
+    <div class="drawer-panel">
+      <!-- Cabeçalho da Gaveta -->
+      <div class="drawer-header">
+        <div class="drawer-title-area">
+          <h2 id="drawer-client-name">Nome do Cliente</h2>
+          <span class="badge" id="drawer-client-status">Ativo</span>
+        </div>
+        <button id="btn-close-drawer" class="btn-close-drawer">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Conteúdo da Gaveta -->
+      <div class="drawer-content" id="drawer-detail-content">
+        <!-- Detalhes do Assinante -->
+        <div class="drawer-section">
+          <h3><i data-lucide="user"></i> Dados Pessoais</h3>
+          <div class="details-list">
+            <div class="detail-item">
+              <span class="label">CPF</span>
+              <span class="value" id="d-cpf">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">E-mail</span>
+              <span class="value" id="d-email">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Telefone</span>
+              <span class="value" id="d-telefone">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Inscrição em</span>
+              <span class="value" id="d-datahora">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <h3><i data-lucide="shopping-bag"></i> Detalhes da Assinatura</h3>
+          <div class="details-list">
+            <div class="detail-item">
+              <span class="label">Cesta</span>
+              <span class="value" id="d-cesta">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Opcional de Ovos</span>
+              <span class="value" id="d-ovos">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Produtor Alocado</span>
+              <span class="value font-highlight" id="d-produtor">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Dia de Entrega</span>
+              <span class="value font-highlight" id="d-diaentrega">-</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <h3><i data-lucide="map-pin"></i> Logística de Entrega</h3>
+          <div class="details-list">
+            <div class="detail-item full-width">
+              <span class="label">Endereço Completo</span>
+              <span class="value" id="d-endereco">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Bairro / Região</span>
+              <span class="value" id="d-bairro-regiao">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">CEP</span>
+              <span class="value" id="d-cep">-</span>
+            </div>
+            <div class="detail-item full-width">
+              <span class="label">Ponto de Referência</span>
+              <span class="value" id="d-referencia">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Janela de Horário</span>
+              <span class="value" id="d-horario">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Onde Deixar (Vizinho)</span>
+              <span class="value" id="d-vizinho">-</span>
+            </div>
+          </div>
+          
+          <div class="action-buttons-row">
+            <button class="btn-outline" id="btn-copy-address">
+              <i data-lucide="copy"></i>
+              <span>Copiar Endereço</span>
+            </button>
+            <a href="#" target="_blank" class="btn-outline text-center" id="link-maps">
+              <i data-lucide="external-link"></i>
+              <span>Ver no Google Maps</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <h3><i data-lucide="credit-card"></i> Financeiro (Asaas)</h3>
+          <div class="details-list">
+            <div class="detail-item">
+              <span class="label">Cobrança Mensal</span>
+              <span class="value text-success font-bold" id="d-totalmensal">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Primeiro Pagamento</span>
+              <span class="value text-success font-bold" id="d-primeiropagamento">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Método de Pagamento</span>
+              <span class="value" id="d-forma-pagamento">-</span>
+            </div>
+            <div class="detail-item">
+              <span class="label">Data de Vencimento</span>
+              <span class="value" id="d-vencimento">-</span>
+            </div>
+          </div>
+          
+          <div class="asaas-details-box" id="d-asaas-box">
+            <div class="asaas-row">
+              <span>Status Asaas:</span>
+              <span class="badge" id="d-asaas-status">-</span>
+            </div>
+            <div class="asaas-row" id="d-row-invoice">
+              <span>Link do Boleto/Fatura:</span>
+              <a href="#" target="_blank" class="btn-link" id="d-link-fatura">Ver Cobrança <i data-lucide="arrow-up-right"></i></a>
+            </div>
+          </div>
+        </div>
+
+        <div class="drawer-section">
+          <h3><i data-lucide="message-square"></i> Observações</h3>
+          <p class="obs-box" id="d-observacoes">Nenhuma observação informada.</p>
+        </div>
+      </div>
+
+      <!-- Rodapé da Gaveta com Ações -->
+      <div class="drawer-footer">
+        <a href="#" target="_blank" class="btn-whatsapp" id="btn-drawer-whatsapp">
+          <i data-lucide="message-circle"></i>
+          <span>Conversar no WhatsApp</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module" src="/src/admin.js"></script>
+</body>
+</html>
