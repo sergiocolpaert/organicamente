@@ -183,11 +183,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const contentType = res.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         console.error('Retorno não-JSON de assinaturas:', res.status, res.statusText);
-        throw new Error(`Resposta inválida (Erro ${res.status})`);
+        throw new Error(`Resposta inválida do servidor (Erro ${res.status})`);
       }
 
       if (!res.ok) {
-        throw new Error('Falha ao obter lista de assinantes');
+        let errMsg = 'Falha ao obter lista de assinantes';
+        try {
+          const errData = await res.json();
+          if (errData && errData.error) {
+            errMsg = errData.error;
+          }
+        } catch (_) {}
+        throw new Error(errMsg);
       }
 
       subscribers = await res.json();
@@ -199,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
       calculateKpis();
     } catch (err) {
       console.error('Erro ao buscar dados:', err);
-      showTableError();
+      showTableError(err.message);
     } finally {
       btnRefresh.classList.remove('spinning');
       btnRefresh.disabled = false;
@@ -224,13 +231,15 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
   }
 
-  function showTableError() {
+  function showTableError(message) {
+    const detail = message ? `<p style="font-size: 12px; color: var(--color-danger); margin-top: 8px; font-weight: 600;">Detalhe do erro: ${message}</p>` : '';
     tableBody.innerHTML = `
       <tr>
         <td colspan="6" class="table-empty">
           <div class="table-empty-box">
             <i data-lucide="alert-triangle" style="color: var(--color-danger);"></i>
             <p>Não foi possível carregar as assinaturas. Verifique as credenciais da planilha e do Asaas.</p>
+            ${detail}
           </div>
         </td>
       </tr>
