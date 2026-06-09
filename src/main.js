@@ -134,6 +134,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const selectVizinho = document.getElementById('select-vizinho');
   const groupVizinhoDetalhes = document.getElementById('group-vizinho-detalhes');
   const inputVizinhoDetalhes = document.getElementById('input-vizinho-detalhes');
+  
+  // Forma de pagamento Asaas
+  const paymentRadios = document.querySelectorAll('input[name="formaPagamento"]');
 
   // ==========================================================================
   // 3. Controle e Navegação de Etapas (Multi-step 100vh)
@@ -819,6 +822,22 @@ document.addEventListener('DOMContentLoaded', () => {
     calculateTotals();
   }));
 
+  // Alterna o estilo visual do seletor de pagamento (Pix/Boleto)
+  paymentRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      paymentRadios.forEach(r => {
+        const card = r.closest('.payment-card');
+        if (card) {
+          if (r.checked) {
+            card.classList.add('active');
+          } else {
+            card.classList.remove('active');
+          }
+        }
+      });
+    });
+  });
+
   updateEggCardPrices();
   calculateTotals();
 
@@ -998,6 +1017,10 @@ document.addEventListener('DOMContentLoaded', () => {
         : `Cobrança Proporcional: ${calc.proportionalNote}`;
     }
 
+    // Identifica o método de pagamento selecionado (Pix ou Boleto)
+    const activePayment = Array.from(paymentRadios).find(r => r.checked) || { value: 'PIX' };
+    const billingType = activePayment.value; // 'PIX' ou 'BOLETO'
+
     const data = {
       nome: formData.get('nome'),
       email: formData.get('email'),
@@ -1022,30 +1045,108 @@ document.addEventListener('DOMContentLoaded', () => {
       observacoes: obsText,
       totalMensal: `R$ ${calc.monthlyTotal.toFixed(2).replace('.', ',')}`,
       primeiroPagamento: `R$ ${calc.initialPaymentTotal.toFixed(2).replace('.', ',')}`,
-      primeiroPagamentoNota: calc.proportionalNote
+      primeiroPagamentoNota: calc.proportionalNote,
+      formaPagamento: billingType
     };
 
-    const sheetsUrl = window.GOOGLE_SHEETS_WEBAPP_URL || '';
-    
-    if (sheetsUrl) {
-      fetch(sheetsUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      })
-      .then(() => {
+    // Payload para o Asaas (backend seguro)
+    const apiPayload = {
+      nome: data.nome,
+      email: data.email,
+      telefone: data.telefone,
+      cpf: data.cpf,
+      cep: data.cep,
+      endereco: formData.get('endereco'),
+      numero: formData.get('numero'),
+      complemento: formData.get('complemento') || '',
+      bairro: data.bairro,
+      produtor: data.produtor,
+      valor: calc.initialPaymentTotal,
+      cestaTipo: calc.basketLabel,
+      billingType: billingType
+    };
+
+    // Chamar backend para criar a cobrança real no Asaas
+    fetch('/api/criar-pagamento', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(apiPayload)
+    })
+    .then(res => {
+      if (!res.ok) {
+        return res.json().then(err => { throw new Error(err.error || 'Erro na resposta do servidor') });
+      }
+      return res.json();
+    })
+    .then(paymentResult => {
+      // Inserir os retornos do Asaas nos dados cadastrados
+      data.asaasPaymentId = paymentResult.paymentId;
+      
+      if (billingType === 'PIX') {
+        data.pixCode = paymentResult.pixCode;
+        data.pixQrCode = paymentResult.pixQrCode;
+        data.bankSlipUrl = '';
+      } else {
+        data.pixCode = '';
+        data.pixQrCode = '';
+        data.bankSlipUrl = paymentResult.bankSlipUrl;
+        data.invoiceUrl = paymentResult.invoiceUrl;
+      }
+
+      // Salvar os dados na Planilha Google Sheets
+      const sheetsUrl = window.GOOGLE_SHEETS_WEBAPP_URL || '';
+      if (sheetsUrl) {
+        fetch(sheetsUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+        .then(() => {
+          proceedToSuccess(data);
+        })
+        .catch((err) => {
+          console.error('Erro na gravação da planilha:', err);
+          proceedToSuccess(data);
+        });
+      } else {
         proceedToSuccess(data);
-      })
-      .catch((err) => {
-        console.error('Erro na gravação da planilha:', err);
+      }
+    })
+    .catch(err => {
+      console.error('Erro ao gerar cobrança no Asaas:', err);
+      // Alerta amigável em caso de erro na API do Asaas e fallback de contingência
+      alert(`Informação: Integração financeira em modo de contingência. A inscrição será registrada normalmente.`);
+      
+      data.asaasPaymentId = 'CONTINGENCIA-ESTATICA';
+      data.pixCode = '00020101021226870014br.gov.bcb.pix2565pix-comunitario-organicamente-csa@bcb.gov.br5204000053039865406175.005802BR5921ORGANICAMENTE%20CSA6009SAO%20PAULO62070503***6304CA4D'; // Pix estático de contingência
+      data.bankSlipUrl = '';
+      data.formaPagamento = 'PIX'; // Força PIX no fallback de erro
+
+      const sheetsUrl = window.GOOGLE_SHEETS_WEBAPP_URL || '';
+      if (sheetsUrl) {
+        fetch(sheetsUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        })
+        .then(() => {
+          proceedToSuccess(data);
+        })
+        .catch(() => {
+          proceedToSuccess(data);
+        });
+      } else {
         proceedToSuccess(data);
-      });
-    } else {
-      proceedToSuccess(data);
-    }
+      }
+    });
   }
 
   function proceedToSuccess(data) {
@@ -1064,7 +1165,36 @@ document.addEventListener('DOMContentLoaded', () => {
     
     successMonthlyValue.textContent = data.totalMensal;
     successFeeValue.textContent = `R$ ${prices.adesao.toFixed(2).replace('.', ',')}`;
-    successFirstPaymentValue.textContent = data.primeiroPagamento;
+
+    // Atualiza a exibição de Pix ou Boleto dinamicamente na tela de sucesso
+    const successPixBox = document.getElementById('success-pix-box');
+    const successBoletoBox = document.getElementById('success-boleto-box');
+    const successFirstPaymentValueBoleto = document.getElementById('success-first-payment-value-boleto');
+    const boletoDownloadBtn = document.getElementById('boleto-download-btn');
+
+    if (data.formaPagamento === 'BOLETO') {
+      if (successPixBox) successPixBox.classList.add('hidden');
+      if (successBoletoBox) {
+        successBoletoBox.classList.remove('hidden');
+        if (successFirstPaymentValueBoleto) {
+          successFirstPaymentValueBoleto.textContent = data.primeiroPagamento;
+        }
+        if (boletoDownloadBtn) {
+          boletoDownloadBtn.href = data.bankSlipUrl || data.invoiceUrl || '#';
+        }
+      }
+    } else {
+      if (successBoletoBox) successBoletoBox.classList.add('hidden');
+      if (successPixBox) {
+        successPixBox.classList.remove('hidden');
+        if (successFirstPaymentValue) {
+          successFirstPaymentValue.textContent = data.primeiroPagamento;
+        }
+        if (pixCodeInput && data.pixCode) {
+          pixCodeInput.value = data.pixCode;
+        }
+      }
+    }
 
     // Atualiza as instruções do Pix para explicar o valor proporcional se houver
     const pixInstructions = document.querySelector('.pix-instructions');
@@ -1082,7 +1212,8 @@ document.addEventListener('DOMContentLoaded', () => {
       : `(Adesão de R$ 35,00 + Mensalidade Integral)`;
 
     const phoneNumber = '5521996751722';
-    const whatsappMessage = `Olá, equipe Organicamente! 🌱\n\nAcabei de finalizar minha inscrição pelo site e gostaria de confirmar minha adesão. Seguem meus dados:\n\n` +
+    
+    let whatsappMessage = `Olá, equipe Organicamente! 🌱\n\nAcabei de finalizar minha inscrição pelo site e gostaria de confirmar minha adesão. Seguem meus dados:\n\n` +
       `👤 *Nome:* ${data.nome}\n` +
       `📞 *Tel:* ${data.telefone}\n` +
       `💳 *CPF:* ${data.cpf}\n` +
@@ -1093,8 +1224,16 @@ document.addEventListener('DOMContentLoaded', () => {
       `🚚 *Endereço:* ${data.endereco}\n` +
       `⏰ *Janela de Horário:* ${data.horario}\n` +
       `🏡 *Onde deixar:* ${data.vizinho}\n\n` +
-      `💵 *Primeiro Pagamento:* ${data.primeiroPagamento} ${paymentNoteText}\n\n` +
-      `*Aguardando PIX para confirmação e ativação da assinatura!*`;
+      `💵 *Primeiro Pagamento:* ${data.primeiroPagamento} ${paymentNoteText}\n`;
+
+    if (data.formaPagamento === 'BOLETO') {
+      whatsappMessage += `📄 *Método:* Boleto Bancário\n` +
+        `🔗 *Link do Boleto:* ${data.bankSlipUrl || data.invoiceUrl}\n\n` +
+        `*Aguardando compensação do boleto para ativação da assinatura!*`;
+    } else {
+      whatsappMessage += `⚡ *Método:* Pix\n\n` +
+        `*Aguardando PIX para confirmação e ativação da assinatura!*`;
+    }
 
     const encodedMessage = encodeURIComponent(whatsappMessage);
     whatsappSubmitBtn.href = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;

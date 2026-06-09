@@ -449,6 +449,28 @@
                       </div>
                     </div>
 
+                    <!-- Seletor de Pagamento Inicial Asaas -->
+                    <div class="payment-method-selector-container">
+                      <label class="payment-selector-label">Forma de Pagamento Inicial:</label>
+                      <div class="payment-method-grid">
+                        <label class="payment-card active" for="payment-pix">
+                          <input type="radio" name="formaPagamento" id="payment-pix" value="PIX" checked>
+                          <span class="payment-card-inner">
+                            <span class="payment-icon">⚡</span>
+                            <span class="payment-text">Pix (Imediato)</span>
+                          </span>
+                        </label>
+                        
+                        <label class="payment-card" for="payment-boleto">
+                          <input type="radio" name="formaPagamento" id="payment-boleto" value="BOLETO">
+                          <span class="payment-card-inner">
+                            <span class="payment-icon">📄</span>
+                            <span class="payment-text">Boleto Bancário</span>
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+
                     <div class="agreement-container">
                       <div class="checkbox-wrapper">
                         <input type="checkbox" id="agreement-checkbox" name="agreement" required>
@@ -569,7 +591,7 @@
             <div class="ticket-divider"></div>
             
             <!-- Chave Pix Copia e Cola -->
-            <div class="pix-payment-box">
+            <div class="pix-payment-box" id="success-pix-box">
               <h4 class="pix-title">Primeiro Pagamento Inicial (Mensalidade + Adesão)</h4>
               <p class="pix-instructions">Realize o pagamento do Pix Copia e Cola abaixo e envie o comprovante de adesão pelo WhatsApp para ativação final da sua entrega.</p>
               <div class="pix-price" id="success-first-payment-value">R$ 175,00</div>
@@ -582,6 +604,20 @@
                 </button>
               </div>
               <span id="pix-copy-feedback" class="pix-copy-feedback-text"></span>
+            </div>
+
+            <!-- Detalhes do Boleto Bancário (Exibido apenas se Boleto for selecionado) -->
+            <div class="boleto-payment-box hidden" id="success-boleto-box">
+              <h4 class="boleto-title">Primeiro Pagamento Inicial (Mensalidade + Adesão)</h4>
+              <p class="boleto-instructions">Clique no botão abaixo para visualizar, salvar ou imprimir o boleto bancário gerado pelo Asaas. Após realizar o pagamento, envie o comprovante por WhatsApp.</p>
+              <div class="boleto-price" id="success-first-payment-value-boleto">R$ 175,00</div>
+              
+              <div class="boleto-action-field">
+                <a href="#" id="boleto-download-btn" class="btn btn-boleto-download" target="_blank">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Visualizar / Baixar Boleto
+                </a>
+              </div>
             </div>
           </div>
           
