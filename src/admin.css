@@ -1324,28 +1324,65 @@ tr:hover td {
    11. LOGO OFICIAL E TELA DE CARREGAMENTO (LOADING OVERLAY) PREMIUM
    ========================================================================== */
 
-/* Cor padrão para a logo oficial em SVG */
-.official-logo-svg {
-  color: var(--color-primary-light);
-  display: inline-block;
-  transition: transform var(--transition-bounce), color var(--transition-normal);
+/* Imagem da logo oficial - pintada no verde da marca usando CSS Filter */
+.official-logo-img {
+  /* Filtro de precisão que transforma preto (#000000) no verde oficial da marca (#2d6a4f) */
+  filter: invert(34%) sepia(45%) saturate(542%) hue-rotate(107deg) brightness(93%) contrast(89%);
+  display: block;
+  object-fit: contain;
 }
 
-/* Hover na logo do header */
-.header-logo:hover .official-logo-svg {
-  transform: scale(1.05) rotate(-3deg);
-  color: var(--color-primary);
+/* Tamanhos específicos das logos */
+.login-logo-img {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto var(--space-2);
 }
 
-/* Animação especial flutuante na tela de login */
-.brand-logo .official-logo-svg {
-  animation: floatLogo 6s ease-in-out infinite;
-  color: var(--color-primary);
+.header-logo-img {
+  width: 48px;
+  height: 48px;
 }
 
-@keyframes floatLogo {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-6px) rotate(3deg); }
+.loading-logo-img {
+  width: 90px;
+  height: 90px;
+}
+
+/* Estilização específica do Formulário de Login (Design Pill-style) */
+.login-card .input-wrapper input {
+  border-radius: var(--radius-full) !important;
+  background-color: #f3f4f6 !important;
+  border: 1.5px solid transparent !important;
+  padding: 14px var(--space-4) 14px 48px !important;
+  font-size: 14.5px !important;
+  color: var(--color-text) !important;
+  box-shadow: none !important;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast) !important;
+}
+
+.login-card .input-wrapper input:focus {
+  background-color: #ffffff !important;
+  border-color: var(--color-primary-light) !important;
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.12) !important;
+}
+
+.login-card .input-wrapper i {
+  left: 20px !important;
+  color: #9ca3af !important;
+  width: 18px !important;
+  height: 18px !important;
+  transition: color var(--transition-fast) !important;
+}
+
+.login-card .input-wrapper input:focus + i {
+  color: var(--color-primary-light) !important;
+}
+
+/* Estilo do botão de login arredondado estilo pílula */
+.login-card .btn-submit {
+  border-radius: var(--radius-full) !important;
+  padding: 14px !important;
 }
 
 /* Overlay de Carregamento de Alta Fidelidade (UI/UX Premium) */
@@ -1400,26 +1437,6 @@ tr:hover td {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* Logo animada com pulso e respiração suave */
-.loading-logo-svg {
-  width: 100%;
-  height: 100%;
-  color: var(--color-primary-light);
-  animation: pulseLogo 2.5s ease-in-out infinite;
-}
-
-@keyframes pulseLogo {
-  0%, 100% { 
-    transform: scale(1); 
-    filter: drop-shadow(0 4px 8px rgba(45, 106, 79, 0.15));
-  }
-  50% { 
-    transform: scale(1.08); 
-    filter: drop-shadow(0 16px 32px rgba(45, 106, 79, 0.35));
-    color: var(--color-primary);
-  }
 }
 
 /* Barra de progresso indeterminada moderna */
