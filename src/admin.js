@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentFilter = 'all'; 
   let searchQuery = '';
   let selectedSubscriber = null; // Guarda o assinante selecionado atualmente
+  let isFirstLoad = true; // Indica se é o primeiro carregamento pós-login
 
   // Seletores DOM - Autenticação
   const loginContainer = document.getElementById('login-container');
@@ -17,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginErrorMsg = document.getElementById('login-error-msg');
   const btnLogin = document.getElementById('btn-login');
   const btnLogout = document.getElementById('btn-logout');
+  const loadingOverlay = document.getElementById('loading-overlay');
 
   // Seletores DOM - Tabela & Filtros
   const tableBody = document.getElementById('table-body');
@@ -126,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       loginContainer.classList.remove('hidden');
       adminDashboard.classList.add('hidden');
+      if (loadingOverlay) loadingOverlay.classList.add('hidden');
     }
   }
 
@@ -196,7 +199,14 @@ document.addEventListener('DOMContentLoaded', () => {
   
   async function fetchData() {
     const token = localStorage.getItem('organicamente_admin_token');
-    if (!token) return;
+    if (!token) {
+      if (loadingOverlay) loadingOverlay.classList.add('hidden');
+      return;
+    }
+
+    if (isFirstLoad && loadingOverlay) {
+      loadingOverlay.classList.remove('hidden');
+    }
 
     btnRefresh.classList.add('spinning');
     btnRefresh.disabled = true;
@@ -244,6 +254,13 @@ document.addEventListener('DOMContentLoaded', () => {
     } finally {
       btnRefresh.classList.remove('spinning');
       btnRefresh.disabled = false;
+      
+      if (isFirstLoad && loadingOverlay) {
+        setTimeout(() => {
+          loadingOverlay.classList.add('hidden');
+          isFirstLoad = false;
+        }, 600);
+      }
     }
   }
 
@@ -453,7 +470,10 @@ document.addEventListener('DOMContentLoaded', () => {
     subscribers.forEach(sub => {
       const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
       
-      if (asaasStatus !== 'OVERDUE' && asaasStatus !== 'CANCELLED') {
+      // Assinante ativo apenas se o pagamento foi confirmado (RECEIVED ou CONFIRMED)
+      const isActive = (asaasStatus === 'RECEIVED' || asaasStatus === 'CONFIRMED');
+      
+      if (isActive) {
         activeCount++;
         
         const valorMensalLimpo = parseFloat((sub.totalMensal || '')

@@ -1319,3 +1319,158 @@ tr:hover td {
   .footer-right-actions button, .footer-right-actions a { justify-content: center; }
   .footer-left-actions button { width: 100%; justify-content: center; }
 }
+
+/* ==========================================================================
+   11. LOGO OFICIAL E TELA DE CARREGAMENTO (LOADING OVERLAY) PREMIUM
+   ========================================================================== */
+
+/* Cor padrão para a logo oficial em SVG */
+.official-logo-svg {
+  color: var(--color-primary-light);
+  display: inline-block;
+  transition: transform var(--transition-bounce), color var(--transition-normal);
+}
+
+/* Hover na logo do header */
+.header-logo:hover .official-logo-svg {
+  transform: scale(1.05) rotate(-3deg);
+  color: var(--color-primary);
+}
+
+/* Animação especial flutuante na tela de login */
+.brand-logo .official-logo-svg {
+  animation: floatLogo 6s ease-in-out infinite;
+  color: var(--color-primary);
+}
+
+@keyframes floatLogo {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-6px) rotate(3deg); }
+}
+
+/* Overlay de Carregamento de Alta Fidelidade (UI/UX Premium) */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(249, 248, 243, 0.92); /* Creme suave da marca levemente translúcido */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 9999; /* Fica acima de tudo, inclusive modais */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
+}
+
+.loading-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+/* Conteúdo centralizado */
+.loading-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  max-width: 380px;
+  padding: var(--space-8);
+  transform: translateY(0);
+  animation: loadCardEnter 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes loadCardEnter {
+  0% { transform: translateY(20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Wrapper da logo no loading */
+.loading-logo-wrapper {
+  margin-bottom: var(--space-6);
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Logo animada com pulso e respiração suave */
+.loading-logo-svg {
+  width: 100%;
+  height: 100%;
+  color: var(--color-primary-light);
+  animation: pulseLogo 2.5s ease-in-out infinite;
+}
+
+@keyframes pulseLogo {
+  0%, 100% { 
+    transform: scale(1); 
+    filter: drop-shadow(0 4px 8px rgba(45, 106, 79, 0.15));
+  }
+  50% { 
+    transform: scale(1.08); 
+    filter: drop-shadow(0 16px 32px rgba(45, 106, 79, 0.35));
+    color: var(--color-primary);
+  }
+}
+
+/* Barra de progresso indeterminada moderna */
+.loading-progress-bar {
+  position: relative;
+  width: 180px;
+  height: 4px;
+  background-color: rgba(27, 67, 50, 0.08); /* Trilha discreta verde escuro */
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+}
+
+.loading-progress-fill {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-secondary), var(--color-primary-light));
+  border-radius: var(--radius-full);
+  animation: loadingProgress 1.8s ease-in-out infinite;
+}
+
+@keyframes loadingProgress {
+  0% {
+    left: -45%;
+    width: 45%;
+  }
+  50% {
+    width: 35%;
+  }
+  100% {
+    left: 100%;
+    width: 25%;
+  }
+}
+
+/* Texto descritivo */
+.loading-text {
+  font-family: var(--font-family-title);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  margin-top: var(--space-2);
+  max-width: 260px;
+  animation: loadingTextPulse 2s ease-in-out infinite;
+}
+
+@keyframes loadingTextPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+

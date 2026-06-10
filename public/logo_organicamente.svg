@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Círculo externo quase completo, aberto embaixo e na direita para o texto -->
+  <path d="M 166.4,166.4 A 90,90 0 1,0 190,100" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" />
+  
+  <!-- Garfo Central -->
+  <!-- Dentes laterais e base -->
+  <path d="M 91,54 L 91,82 C 91,92 109,92 109,82 L 109,54" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Dente central -->
+  <path d="M 100,54 L 100,82" stroke="currentColor" stroke-width="5" stroke-linecap="round" />
+  <!-- Cabo do garfo -->
+  <path d="M 100,90 L 100,166" stroke="currentColor" stroke-width="6.5" stroke-linecap="round" />
+  
+  <!-- Folha Esquerda (saindo do cabo) -->
+  <path d="M 95,116 C 73,107 48,112 40,129 C 48,150 74,144 95,131 Z" fill="currentColor" />
+  
+  <!-- Folha Direita (saindo do cabo) -->
+  <path d="M 105,116 C 127,107 152,112 160,129 C 152,150 126,144 105,131 Z" fill="currentColor" />
+
+  <!-- Texto Arqueado "ORGANICAMENTE" na base -->
+  <path id="textPathCurve" d="M 38,155 A 90,90 0 0,0 182,126" fill="none" stroke="none" />
+  <text font-family="Outfit, Inter, sans-serif" font-weight="900" font-size="17" fill="currentColor" letter-spacing="1.1">
+    <textPath href="#textPathCurve" startOffset="10%">ORGANICAMENTE</textPath>
+  </text>
+</svg>
