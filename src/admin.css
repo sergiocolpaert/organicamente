@@ -1491,3 +1491,149 @@ tr:hover td {
   50% { opacity: 1; }
 }
 
+/* Estilo do botão de Roteiro de Entregas */
+.footer-buttons-row {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.btn-delivery-report {
+  background-color: var(--color-accent);
+  border: 1.5px solid rgba(45, 106, 79, 0.2);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  color: var(--color-primary-light);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  transition: all var(--transition-normal);
+}
+
+.btn-delivery-report:hover {
+  background-color: var(--color-primary-light);
+  color: #ffffff;
+  border-color: var(--color-primary-light);
+  transform: translateY(-1px);
+}
+
+.btn-delivery-report i {
+  width: 14px;
+  height: 14px;
+}
+
+/* Modal de Roteiro de Entregas (Logística) */
+.report-controls {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-end;
+  background-color: var(--color-bg);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  margin-bottom: var(--space-6);
+}
+
+.report-controls .form-group {
+  margin-bottom: 0;
+}
+
+.report-results-table-container {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: #ffffff;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.report-table th {
+  background-color: var(--color-bg);
+  color: var(--color-primary);
+  font-weight: 700;
+  padding: 12px var(--space-4);
+  border-bottom: 1.5px solid var(--color-border);
+}
+
+.report-table td {
+  padding: 12px var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13.5px;
+}
+
+.report-table tr:hover td {
+  background-color: var(--color-accent);
+}
+
+/* Ocultar elementos específicos na tela que só aparecem na impressão */
+.hidden-screen {
+  display: none;
+}
+
+/* CSS para Impressão Premium do Roteiro de Logística */
+@media print {
+  /* Ocultar tudo na página por padrão */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Mostrar apenas a área de impressão do modal ativo */
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+  
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .hidden-screen {
+    display: block !important;
+  }
+  
+  /* Ajustes de formatação específicos para folha de papel */
+  .print-header {
+    text-align: center;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #000;
+    padding-bottom: 12px;
+  }
+
+  .print-header h2 {
+    color: #000000 !important;
+    font-size: 24px;
+    font-weight: bold;
+  }
+
+  .print-header p {
+    font-size: 14px;
+    margin-top: 4px;
+  }
+
+  .report-table {
+    border: 1px solid #000000 !important;
+  }
+
+  .report-table th {
+    background-color: #f3f4f6 !important;
+    color: #000000 !important;
+    border-bottom: 2px solid #000000 !important;
+    font-size: 12px;
+  }
+
+  .report-table td {
+    border-bottom: 1px solid #e5e7eb !important;
+    color: #000000 !important;
+    font-size: 12px;
+  }
+}
+
+

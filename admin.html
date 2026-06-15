@@ -193,8 +193,8 @@
             <button class="tab-btn" data-filter="russo">Russo</button>
             <button class="tab-btn" data-filter="terca">Terça</button>
             <button class="tab-btn" data-filter="quarta">Quarta</button>
-            <button class="tab-btn" data-filter="pago">Pagos (Asaas)</button>
-            <button class="tab-btn" data-filter="atrasado">Atrasados (Asaas)</button>
+            <button class="tab-btn" data-filter="pago">Ativos (Pagos)</button>
+            <button class="tab-btn" data-filter="atrasado">Atrasados</button>
           </div>
         </div>
 
@@ -224,10 +224,16 @@
         <!-- Rodapé da Tabela -->
         <div class="table-footer">
           <span id="table-rows-count">Mostrando 0 assinantes</span>
-          <button id="btn-refresh" class="btn-refresh">
-            <i data-lucide="rotate-cw"></i>
-            <span>Atualizar Dados</span>
-          </button>
+          <div class="footer-buttons-row">
+            <button id="btn-delivery-report" class="btn-delivery-report">
+              <i data-lucide="printer"></i>
+              <span>Roteiro de Entregas</span>
+            </button>
+            <button id="btn-refresh" class="btn-refresh">
+              <i data-lucide="rotate-cw"></i>
+              <span>Atualizar Dados</span>
+            </button>
+          </div>
         </div>
       </section>
       
@@ -787,6 +793,85 @@
       <div class="confirm-actions">
         <button class="btn-outline" id="btn-delete-cancel">Cancelar</button>
         <button class="btn-danger" id="btn-delete-confirm">Sim, Excluir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 6. MODAL: ROTEIRO DE ENTREGAS (LOGÍSTICA)  -->
+  <!-- ========================================== -->
+  <div id="delivery-modal" class="modal-backdrop">
+    <div class="modal-panel max-width-large">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <h2>Roteiro de Entregas (Logística)</h2>
+          <p style="font-size: 13px; color: var(--color-text-secondary);">Gere a lista de entregas para os produtores (apenas assinantes ativos/pagos)</p>
+        </div>
+        <button id="btn-close-delivery-modal" class="btn-close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body-form">
+        <!-- Controles de Filtro do Relatório -->
+        <div class="report-controls">
+          <div class="form-group flex-1">
+            <label for="report-produtor">Produtor</label>
+            <select id="report-produtor">
+              <option value="Bruno e Família">Bruno e Família</option>
+              <option value="Russo e Família">Russo e Família</option>
+            </select>
+          </div>
+          <div class="form-group flex-1">
+            <label for="report-dia">Dia de Entrega</label>
+            <select id="report-dia">
+              <option value="Terça-feira">Terça-feira</option>
+              <option value="Quarta-feira">Quarta-feira</option>
+            </select>
+          </div>
+          <button type="button" id="btn-generate-report" class="btn-primary">
+            <i data-lucide="play"></i>
+            <span>Gerar Roteiro</span>
+          </button>
+        </div>
+
+        <!-- Área de Impressão do Roteiro -->
+        <div id="print-area" class="print-area">
+          <div class="print-header hidden-screen">
+            <h2>Organicamente - Roteiro de Entregas</h2>
+            <p id="print-subtitle">Produtor: - | Dia: -</p>
+          </div>
+          
+          <div id="report-results" class="report-results-table-container">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Cliente / Contato</th>
+                  <th>Endereço / Bairro</th>
+                  <th>Cesta / Opcional</th>
+                  <th>Obs. Logística</th>
+                </tr>
+              </thead>
+              <tbody id="report-table-body">
+                <tr>
+                  <td colspan="4" style="text-align: center; padding: 24px; color: var(--color-text-secondary);">
+                    Selecione as opções acima e clique em "Gerar Roteiro".
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-outline" type="button" id="btn-print-report">
+          <i data-lucide="printer"></i>
+          <span>Imprimir Roteiro</span>
+        </button>
+        <button class="btn-primary" type="button" id="btn-close-delivery-footer" style="margin-left: auto;">
+          <span>Fechar</span>
+        </button>
       </div>
     </div>
   </div>

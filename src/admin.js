@@ -19,6 +19,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnLogin = document.getElementById('btn-login');
   const btnLogout = document.getElementById('btn-logout');
   const loadingOverlay = document.getElementById('loading-overlay');
+ 
+  // Seletores DOM - Roteiro de Entregas (Logística)
+  const btnDeliveryReport = document.getElementById('btn-delivery-report');
+  const deliveryModal = document.getElementById('delivery-modal');
+  const btnCloseDeliveryModal = document.getElementById('btn-close-delivery-modal');
+  const btnCloseDeliveryFooter = document.getElementById('btn-close-delivery-footer');
+  const reportProdutor = document.getElementById('report-produtor');
+  const reportDia = document.getElementById('report-dia');
+  const btnGenerateReport = document.getElementById('btn-generate-report');
+  const btnPrintReport = document.getElementById('btn-print-report');
+  const reportTableBody = document.getElementById('report-table-body');
+  const printSubtitle = document.getElementById('print-subtitle');
 
   // Seletores DOM - Tabela & Filtros
   const tableBody = document.getElementById('table-body');
@@ -398,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const searchMatch = !searchQuery || 
         (sub.nome || '').toLowerCase().includes(searchQuery) ||
         (sub.email || '').toLowerCase().includes(searchQuery) ||
-        (sub.cpf || '').replace(/\D/g, '').includes(searchQuery);
+        String(sub.cpf || '').replace(/\D/g, '').includes(searchQuery);
 
       if (!searchMatch) return false;
 
@@ -476,7 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isActive) {
         activeCount++;
         
-        const valorMensalLimpo = parseFloat((sub.totalMensal || '')
+        const valorMensalLimpo = parseFloat(String(sub.totalMensal || '')
           .replace(/[^\d,]/g, '')
           .replace(',', '.'));
           
@@ -636,7 +648,7 @@ document.addEventListener('DOMContentLoaded', () => {
     modalLinkMaps.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
 
     // WhatsApp Direto
-    const phoneClean = (sub.telefone || '').replace(/\D/g, '');
+    const phoneClean = String(sub.telefone || '').replace(/\D/g, '');
     const primeirNome = (sub.nome || '').split(' ')[0];
     
     let zapText = `Olá, ${primeirNome}! 🌱 Tudo bem?\n\nAqui é a equipe do Organicamente. Passando para confirmar as informações de sua assinatura:\n\n` +
@@ -1086,6 +1098,115 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
+  // 9. MODAL: ROTEIRO DE ENTREGAS (LOGÍSTICA)
+  // ==========================================================================
+
+  if (btnDeliveryReport) {
+    btnDeliveryReport.addEventListener('click', () => {
+      // Limpa tabela de resultados ao abrir
+      reportTableBody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 24px; color: var(--color-text-secondary);">
+            Selecione as opções acima e clique em "Gerar Roteiro".
+          </td>
+        </tr>
+      `;
+      deliveryModal.classList.add('active');
+      if (window.lucide) window.lucide.createIcons();
+    });
+  }
+
+  function closeDeliveryModal() {
+    deliveryModal.classList.remove('active');
+  }
+
+  if (btnCloseDeliveryModal) btnCloseDeliveryModal.addEventListener('click', closeDeliveryModal);
+  if (btnCloseDeliveryFooter) btnCloseDeliveryFooter.addEventListener('click', closeDeliveryModal);
+  if (deliveryModal) {
+    deliveryModal.addEventListener('click', (e) => {
+      if (e.target === deliveryModal) {
+        closeDeliveryModal();
+      }
+    });
+  }
+
+  // Gera o Roteiro
+  if (btnGenerateReport) {
+    btnGenerateReport.addEventListener('click', () => {
+      const produtorSel = reportProdutor.value;
+      const diaSel = reportDia.value;
+
+      // Filtra assinantes que:
+      // 1. Estão ativos (pagamento recebido ou confirmado no Asaas)
+      // 2. Pertencem ao produtor selecionado
+      // 3. Pertencem ao dia de entrega selecionado
+      const activeDeliveries = subscribers.filter(sub => {
+        const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
+        const isActive = (asaasStatus === 'RECEIVED' || asaasStatus === 'CONFIRMED');
+        
+        // Limpeza e match flexível de produtor
+        const subProdutor = String(sub.produtor || '').toLowerCase();
+        const matchesProdutor = subProdutor.includes(produtorSel.split(' ')[0].toLowerCase());
+        
+        // Match exato de dia de entrega
+        const subDia = String(sub.diaEntrega || '').toLowerCase().trim();
+        const matchesDia = subDia === diaSel.toLowerCase().trim();
+
+        return isActive && matchesProdutor && matchesDia;
+      });
+
+      // Atualiza o subtítulo da impressão
+      printSubtitle.textContent = `Produtor: ${produtorSel} | Dia de Entrega: ${diaSel} (${activeDeliveries.length} entregas ativas)`;
+
+      if (activeDeliveries.length === 0) {
+        reportTableBody.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; padding: 24px; color: var(--color-text-secondary);">
+              Nenhuma entrega ativa encontrada para este produtor neste dia.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      reportTableBody.innerHTML = '';
+
+      activeDeliveries.forEach(sub => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>
+            <strong>${sub.nome}</strong><br>
+            <span style="font-size: 11px; color: var(--color-text-secondary);">${formatPhone(sub.telefone)}</span>
+          </td>
+          <td>
+            ${sub.endereco} - ${sub.bairro}<br>
+            <span style="font-size: 11px; color: var(--color-text-secondary);">CEP: ${formatCEP(sub.cep)} | Região: ${sub.regiao}</span>
+          </td>
+          <td>
+            <strong>${sub.cestaTipo}</strong><br>
+            <span style="font-size: 11px; color: var(--color-text-secondary);">${sub.ovosTipo}</span>
+          </td>
+          <td>
+            <span style="font-size: 12px; color: var(--color-text-secondary); font-style: italic;">
+              ${sub.pontoReferencia && sub.pontoReferencia !== 'Não informado' ? `Ref: ${sub.pontoReferencia}. ` : ''}
+              ${sub.vizinho && sub.vizinho !== 'Deixar no local' ? `Se ausente: ${sub.vizinho}. ` : ''}
+              ${sub.observacoes && sub.observacoes !== 'Nenhuma' ? `Obs: ${sub.observacoes}` : ''}
+            </span>
+          </td>
+        `;
+        reportTableBody.appendChild(row);
+      });
+    });
+  }
+
+  // Ação de Impressão
+  if (btnPrintReport) {
+    btnPrintReport.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  // ==========================================================================
   // HELPER FUNCTIONS (FORMATADORES)
   // ==========================================================================
   
@@ -1102,7 +1223,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function formatPhone(phone) {
     if (!phone) return '-';
-    const clean = phone.replace(/\D/g, '');
+    const clean = String(phone).replace(/\D/g, '');
     if (clean.length === 11) {
       return `(${clean.slice(0, 2)}) ${clean.slice(2, 7)}-${clean.slice(7)}`;
     }
@@ -1114,7 +1235,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function formatCPF(cpf) {
     if (!cpf) return '-';
-    const clean = cpf.replace(/\D/g, '');
+    const clean = String(cpf).replace(/\D/g, '');
     if (clean.length === 11) {
       return `${clean.slice(0, 3)}.${clean.slice(3, 6)}.${clean.slice(6, 9)}-${clean.slice(9)}`;
     }
@@ -1123,7 +1244,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function formatCEP(cep) {
     if (!cep) return '-';
-    const clean = cep.replace(/\D/g, '');
+    const clean = String(cep).replace(/\D/g, '');
     if (clean.length === 8) {
       return `${clean.slice(0, 5)}-${clean.slice(5)}`;
     }

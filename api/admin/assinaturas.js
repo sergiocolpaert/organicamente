@@ -166,7 +166,7 @@ export default async function handler(req, res) {
 
       // Cruzamento
       const responseData = await Promise.all(planData.map(async (row) => {
-        const cpfClean = (row.cpf || '').replace(/\D/g, '');
+        const cpfClean = String(row.cpf || '').replace(/\D/g, '');
         const produtorLower = (row.produtor || '').toLowerCase();
         const produtorKey = produtorLower.includes('bruno') ? 'bruno' : 'russo';
 
