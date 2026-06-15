@@ -164,6 +164,21 @@ export default async function handler(req, res) {
         }
       }
 
+      // Helper para atualizar a planilha em background sem bloquear a resposta do GET
+      function updateStatusInSheetsBackground(sheetsUrl, token, rowData) {
+        fetch(sheetsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            token: token,
+            data: rowData
+          })
+        }).catch(err => {
+          console.error('Erro ao atualizar status na planilha em background:', err);
+        });
+      }
+
       // Cruzamento
       const responseData = await Promise.all(planData.map(async (row) => {
         const cpfClean = String(row.cpf || '').replace(/\D/g, '');
@@ -191,8 +206,30 @@ export default async function handler(req, res) {
           asaasInfo = await fetchIndividualAsaasStatus(cpfClean, row.produtor);
         }
 
+        // Determinação do status interno de assinatura (separado do Asaas)
+        let statusAssinatura = row.statusAssinatura || '';
+        const isPaidInAsaas = asaasInfo && (asaasInfo.status === 'RECEIVED' || asaasInfo.status === 'CONFIRMED');
+
+        if (!statusAssinatura) {
+          // Se não há status na planilha (registro legado/antigo)
+          statusAssinatura = isPaidInAsaas ? 'Ativo' : 'Pendente';
+          // Dispara gravação automática na planilha em background
+          updateStatusInSheetsBackground(sheetsUrl, token, {
+            ...row,
+            statusAssinatura: statusAssinatura
+          });
+        } else if (statusAssinatura === 'Pendente' && isPaidInAsaas) {
+          // Se está Pendente na planilha mas foi pago no Asaas, promove para Ativo automaticamente
+          statusAssinatura = 'Ativo';
+          updateStatusInSheetsBackground(sheetsUrl, token, {
+            ...row,
+            statusAssinatura: 'Ativo'
+          });
+        }
+
         return {
           ...row,
+          statusAssinatura: statusAssinatura,
           asaas: asaasInfo || { status: 'DESCONHECIDO' }
         };
       }));
@@ -205,6 +242,7 @@ export default async function handler(req, res) {
     // ==========================================================================
     if (req.method === 'POST') {
       const data = req.body;
+      data.statusAssinatura = data.statusAssinatura || 'Pendente';
       if (!data.nome || !data.email || !data.telefone || !data.cpf || !data.cep || !data.endereco || !data.bairro || !data.produtor) {
         return res.status(400).json({ error: 'Parâmetros obrigatórios ausentes para cadastro.' });
       }

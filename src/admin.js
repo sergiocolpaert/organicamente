@@ -337,22 +337,40 @@ document.addEventListener('DOMContentLoaded', () => {
         .join('')
         .toUpperCase();
 
-      const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
-      let statusClass = 'desconhecido';
-      let statusLabel = 'Sem Registro';
+      // Status Interno da Assinatura (Badge Principal)
+      const statusInterno = sub.statusAssinatura || 'Pendente';
+      let statusClass = 'pendente';
+      let statusLabel = statusInterno;
 
+      if (statusInterno === 'Ativo') {
+        statusClass = 'ativa'; // verde
+      } else if (statusInterno === 'Pendente') {
+        statusClass = 'pendente'; // amarelo
+      } else if (statusInterno === 'Inativo') {
+        statusClass = 'desconhecido'; // cinza
+      } else if (statusInterno === 'Cancelado') {
+        statusClass = 'atrasada'; // vermelho
+      }
+
+      // Status Financeiro do Asaas (Linha Secundária)
+      const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
+      let asaasLabel = 'Financeiro: Sem Registro';
+      let asaasStyleColor = 'var(--color-text-secondary)';
       if (asaasStatus === 'RECEIVED' || asaasStatus === 'CONFIRMED') {
-        statusClass = 'paga';
-        statusLabel = 'Pago';
+        asaasLabel = 'Financeiro: Pago';
+        asaasStyleColor = 'var(--color-success)';
       } else if (asaasStatus === 'PENDING') {
-        statusClass = 'pendente';
-        statusLabel = 'Pendente';
+        asaasLabel = 'Financeiro: Pendente';
+        asaasStyleColor = 'var(--color-warning)';
       } else if (asaasStatus === 'OVERDUE') {
-        statusClass = 'atrasada';
-        statusLabel = 'Vencido';
-      } else if (asaasStatus === 'SEM_CLIENTE' || asaasStatus === 'SEM_COBRANCA') {
-        statusClass = 'sem_integracao';
-        statusLabel = 'Pendente Registro';
+        asaasLabel = 'Financeiro: Atrasado';
+        asaasStyleColor = 'var(--color-danger)';
+      } else if (asaasStatus === 'SEM_CLIENTE') {
+        asaasLabel = 'Sem Cadastro Asaas';
+        asaasStyleColor = 'var(--color-text-secondary)';
+      } else if (asaasStatus === 'SEM_COBRANCA') {
+        asaasLabel = 'Sem Cobrança Ativa';
+        asaasStyleColor = 'var(--color-text-secondary)';
       }
 
       const row = document.createElement('tr');
@@ -380,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </td>
         <td>
           <span class="badge ${statusClass}">${statusLabel}</span>
+          <div class="cell-basket-sub" style="margin-top: 4px; font-size: 11px; color: ${asaasStyleColor}; font-weight: 600;">${asaasLabel}</div>
         </td>
         <td>
           <button class="btn-action-view" data-index="${idx}">
@@ -424,8 +443,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentFilter === 'terca') return diaLower.includes('terça') || diaLower.includes('terca');
       if (currentFilter === 'quarta') return diaLower.includes('quarta');
 
+      if (currentFilter === 'ativo') return sub.statusAssinatura === 'Ativo';
       const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
-      if (currentFilter === 'pago') return asaasStatus === 'RECEIVED' || asaasStatus === 'CONFIRMED';
       if (currentFilter === 'atrasado') return asaasStatus === 'OVERDUE';
 
       return true;
@@ -480,10 +499,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let russoCount = 0;
 
     subscribers.forEach(sub => {
-      const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
-      
-      // Assinante ativo apenas se o pagamento foi confirmado (RECEIVED ou CONFIRMED)
-      const isActive = (asaasStatus === 'RECEIVED' || asaasStatus === 'CONFIRMED');
+      // Assinante ativo apenas se o status interno da assinatura for 'Ativo'
+      const isActive = (sub.statusAssinatura === 'Ativo');
       
       if (isActive) {
         activeCount++;
@@ -497,7 +514,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      if (asaasStatus === 'PENDING') {
+      // Assinante pendente se o status interno da assinatura for 'Pendente'
+      if (sub.statusAssinatura === 'Pendente') {
         pendingCount++;
       }
 
@@ -548,23 +566,19 @@ document.addEventListener('DOMContentLoaded', () => {
     modalBodies.forEach(body => body.classList.remove('active-tab'));
     modalBodies[0].classList.add('active-tab');
 
-    // Badge do Status Geral
-    const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
-    let statusClass = 'desconhecido';
-    let statusLabel = 'Sem Registro';
+    // Badge do Status Geral (Interno)
+    const statusInterno = sub.statusAssinatura || 'Pendente';
+    let statusClass = 'pendente';
+    let statusLabel = statusInterno;
 
-    if (asaasStatus === 'RECEIVED' || asaasStatus === 'CONFIRMED') {
-      statusClass = 'paga';
-      statusLabel = 'Assinatura Ativa';
-    } else if (asaasStatus === 'PENDING') {
+    if (statusInterno === 'Ativo') {
+      statusClass = 'ativa';
+    } else if (statusInterno === 'Pendente') {
       statusClass = 'pendente';
-      statusLabel = 'Aguardando Pagamento';
-    } else if (asaasStatus === 'OVERDUE') {
+    } else if (statusInterno === 'Inativo') {
+      statusClass = 'desconhecido';
+    } else if (statusInterno === 'Cancelado') {
       statusClass = 'atrasada';
-      statusLabel = 'Pagamento Atrasado';
-    } else if (asaasStatus === 'SEM_CLIENTE' || asaasStatus === 'SEM_COBRANCA') {
-      statusClass = 'sem_integracao';
-      statusLabel = 'Pendência Asaas';
     }
 
     modalClientStatus.className = `badge ${statusClass}`;
@@ -821,6 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
         vizinho: document.getElementById('new-vizinho').value.trim() || 'Deixar no local',
         comoConheceu: document.getElementById('new-comoConheceu').value.trim() || 'Não informado',
         observacoes: document.getElementById('new-observacoes').value.trim() || 'Nenhuma',
+        statusAssinatura: document.getElementById('new-statusAssinatura').value,
         totalMensal: document.getElementById('new-totalmensal').value,
         primeiroPagamento: document.getElementById('new-primeiropagamento').value,
         formaPagamento: document.getElementById('new-forma-pagamento').value
@@ -902,6 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('edit-horario').value = selectedSubscriber.horario || '';
     document.getElementById('edit-comoConheceu').value = selectedSubscriber.comoConheceu || '';
     document.getElementById('edit-observacoes').value = selectedSubscriber.observacoes || '';
+    document.getElementById('edit-statusAssinatura').value = selectedSubscriber.statusAssinatura || 'Pendente';
     
     // Selects
     document.getElementById('edit-produtor').value = selectedSubscriber.produtor || 'Russo e Família';
@@ -971,6 +987,7 @@ document.addEventListener('DOMContentLoaded', () => {
         vizinho: document.getElementById('edit-vizinho').value.trim() || 'Deixar no local',
         comoConheceu: document.getElementById('edit-comoConheceu').value.trim() || 'Não informado',
         observacoes: document.getElementById('edit-observacoes').value.trim() || 'Nenhuma',
+        statusAssinatura: document.getElementById('edit-statusAssinatura').value,
         totalMensal: document.getElementById('edit-totalmensal').value,
         primeiroPagamento: document.getElementById('edit-primeiropagamento').value,
         formaPagamento: document.getElementById('edit-forma-pagamento').value,
@@ -1141,8 +1158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // 2. Pertencem ao produtor selecionado
       // 3. Pertencem ao dia de entrega selecionado
       const activeDeliveries = subscribers.filter(sub => {
-        const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
-        const isActive = (asaasStatus === 'RECEIVED' || asaasStatus === 'CONFIRMED');
+        const isActive = (sub.statusAssinatura === 'Ativo');
         
         // Limpeza e match flexível de produtor
         const subProdutor = String(sub.produtor || '').toLowerCase();
