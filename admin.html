@@ -30,7 +30,7 @@
       <div class="loading-progress-bar">
         <div class="loading-progress-fill"></div>
       </div>
-      <p class="loading-text">Sincronizando dados com a Planilha e Asaas...</p>
+      <p class="loading-text">Sincronizando dados...</p>
     </div>
   </div>
 
@@ -259,10 +259,12 @@
       <!-- Abas Internas do Modal -->
       <div class="modal-tabs">
         <button class="modal-tab-btn active" data-tab="tab-details">Ficha do Assinante</button>
-        <button class="modal-tab-btn" data-tab="tab-finance">Logística e Financeiro</button>
+        <button class="modal-tab-btn" data-tab="tab-logistics">Logística de Entrega</button>
+        <button class="modal-tab-btn" data-tab="tab-finance">Histórico Financeiro</button>
       </div>
 
       <!-- Conteúdo do Modal (Visualização Estática) -->
+      <!-- Aba 1: Ficha do Assinante -->
       <div class="modal-body active-tab" id="tab-details">
         <div class="modal-section-grid">
           <!-- Dados Pessoais -->
@@ -318,11 +320,11 @@
         </div>
       </div>
 
-      <!-- Aba 2: Logística e Financeiro -->
-      <div class="modal-body" id="tab-finance">
-        <div class="modal-section-grid">
+      <!-- Aba 2: Logística de Entrega -->
+      <div class="modal-body" id="tab-logistics">
+        <div class="modal-section-grid" style="grid-template-columns: 1fr;">
           <!-- Logística -->
-          <div class="modal-section">
+          <div class="modal-section" style="width: 100%;">
             <h3><i data-lucide="map-pin"></i> Logística de Entrega</h3>
             <div class="details-list">
               <div class="detail-item full-width">
@@ -350,10 +352,10 @@
                 <span class="value" id="m-horario">-</span>
               </div>
             </div>
-            <div class="action-buttons-row" style="margin-top: 12px;">
+            <div class="action-buttons-row" style="margin-top: 16px;">
               <button class="btn-outline" id="btn-modal-copy-address">
                 <i data-lucide="copy"></i>
-                <span>Copiar</span>
+                <span>Copiar Endereço</span>
               </button>
               <a href="#" target="_blank" class="btn-outline" id="modal-link-maps">
                 <i data-lucide="map"></i>
@@ -361,9 +363,14 @@
               </a>
             </div>
           </div>
+        </div>
+      </div>
 
+      <!-- Aba 3: Histórico Financeiro -->
+      <div class="modal-body" id="tab-finance">
+        <div class="modal-section-grid" style="grid-template-columns: 1fr;">
           <!-- Financeiro -->
-          <div class="modal-section">
+          <div class="modal-section" style="width: 100%;">
             <h3><i data-lucide="credit-card"></i> Financeiro (Asaas)</h3>
             <div class="details-list">
               <div class="detail-item">
@@ -375,18 +382,26 @@
                 <span class="value text-success font-bold" id="m-primeiropagamento">-</span>
               </div>
               <div class="detail-item">
-                <span class="label">Método</span>
+                <span class="label">Método de Cobrança</span>
                 <span class="value" id="m-forma-pagamento">-</span>
               </div>
               <div class="detail-item">
                 <span class="label">Último Vencimento</span>
                 <span class="value" id="m-vencimento">-</span>
               </div>
+              <div class="detail-item">
+                <span class="label">Valor Pago Asaas</span>
+                <span class="value text-success font-bold" id="m-valor-pago">-</span>
+              </div>
+              <div class="detail-item">
+                <span class="label">Data de Pagamento</span>
+                <span class="value" id="m-data-pagamento">-</span>
+              </div>
             </div>
 
-            <div class="asaas-details-box" id="m-asaas-box">
+            <div class="asaas-details-box" id="m-asaas-box" style="margin-top: 20px;">
               <div class="asaas-row">
-                <span>Status Asaas:</span>
+                <span>Status da Cobrança Asaas:</span>
                 <span class="badge" id="m-asaas-status">-</span>
               </div>
               <div class="asaas-row" id="m-row-invoice">

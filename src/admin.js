@@ -88,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const mAsaasBox = document.getElementById('m-asaas-box');
   const mLinkFatura = document.getElementById('m-link-fatura');
   const mRowInvoice = document.getElementById('m-row-invoice');
+  const mValorPago = document.getElementById('m-valor-pago');
+  const mDataPagamento = document.getElementById('m-data-pagamento');
   const mObservacoes = document.getElementById('m-observacoes');
   const btnModalCopyAddress = document.getElementById('btn-modal-copy-address');
   const modalLinkMaps = document.getElementById('modal-link-maps');
@@ -216,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    if (isFirstLoad && loadingOverlay) {
+    if (loadingOverlay) {
       loadingOverlay.classList.remove('hidden');
     }
 
@@ -267,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnRefresh.classList.remove('spinning');
       btnRefresh.disabled = false;
       
-      if (isFirstLoad && loadingOverlay) {
+      if (loadingOverlay) {
         setTimeout(() => {
           loadingOverlay.classList.add('hidden');
           isFirstLoad = false;
@@ -613,6 +615,26 @@ document.addEventListener('DOMContentLoaded', () => {
       mVencimento.textContent = new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR');
     } else {
       mVencimento.textContent = 'Não gerado';
+    }
+
+    // Valor Pago e Data de Pagamento Asaas
+    if (sub.asaas) {
+      const isPaid = sub.asaas.status === 'RECEIVED' || sub.asaas.status === 'CONFIRMED';
+      if (isPaid) {
+        mValorPago.textContent = formatMoney(sub.asaas.value || 0);
+        if (sub.asaas.paymentDate || sub.asaas.confirmedDate) {
+          const rawDate = sub.asaas.paymentDate || sub.asaas.confirmedDate;
+          mDataPagamento.textContent = new Date(rawDate + 'T12:00:00').toLocaleDateString('pt-BR');
+        } else {
+          mDataPagamento.textContent = 'Confirmado';
+        }
+      } else {
+        mValorPago.textContent = 'Não efetuado';
+        mDataPagamento.textContent = 'Aguardando';
+      }
+    } else {
+      mValorPago.textContent = 'Sem Registro';
+      mDataPagamento.textContent = 'Sem Registro';
     }
 
     // Status Asaas

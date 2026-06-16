@@ -157,7 +157,9 @@ export default async function handler(req, res) {
             dueDate: payment.dueDate,
             value: payment.value,
             billingType: payment.billingType,
-            invoiceUrl: payment.invoiceUrl || payment.bankSlipUrl || ''
+            invoiceUrl: payment.invoiceUrl || payment.bankSlipUrl || '',
+            paymentDate: payment.paymentDate || '',
+            confirmedDate: payment.confirmedDate || ''
           };
         } catch (e) {
           return null;
@@ -180,7 +182,9 @@ export default async function handler(req, res) {
               dueDate: cachedPayment.dueDate,
               value: cachedPayment.value,
               billingType: cachedPayment.billingType,
-              invoiceUrl: cachedPayment.invoiceUrl || cachedPayment.bankSlipUrl || ''
+              invoiceUrl: cachedPayment.invoiceUrl || cachedPayment.bankSlipUrl || '',
+              paymentDate: cachedPayment.paymentDate || '',
+              confirmedDate: cachedPayment.confirmedDate || ''
             };
           } else {
             asaasInfo = { status: 'SEM_COBRANCA' };

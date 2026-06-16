@@ -1636,4 +1636,79 @@ tr:hover td {
   }
 }
 
+/* ========================================================== */
+/* FORMULÁRIOS DE CADASTRO E EDIÇÃO MODERNIZADOS (UI/UX PREMIUM) */
+/* ========================================================== */
+
+.modal-body-edit, .modal-body-form {
+  background-color: #fcfcfb;
+}
+
+.modal-body-edit input,
+.modal-body-edit select,
+.modal-body-edit textarea,
+.modal-body-form input,
+.modal-body-form select,
+.modal-body-form textarea {
+  border-radius: var(--radius-lg) !important;
+  background-color: #f3f4f6 !important;
+  border: 1.5px solid transparent !important;
+  padding: 12px var(--space-4) !important;
+  font-size: 13.5px !important;
+  color: var(--color-text) !important;
+  box-shadow: none !important;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast) !important;
+}
+
+.modal-body-edit input:focus,
+.modal-body-edit select:focus,
+.modal-body-edit textarea:focus,
+.modal-body-form input:focus,
+.modal-body-form select:focus,
+.modal-body-form textarea:focus {
+  background-color: #ffffff !important;
+  border-color: var(--color-primary-light) !important;
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.12) !important;
+}
+
+.modal-body-edit label,
+.modal-body-form label {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: var(--color-primary-light) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  margin-bottom: var(--space-2) !important;
+  display: block;
+}
+
+/* Seções de Formulário como Cards Resilientes */
+.form-section-column {
+  background-color: #ffffff;
+  border: 1.5px solid var(--color-border);
+  padding: var(--space-6) var(--space-8);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.015);
+  gap: var(--space-5) !important;
+}
+
+.form-section-column h3 {
+  border-bottom: 2px solid var(--color-primary-light) !important;
+  color: var(--color-primary-light) !important;
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
+  padding-bottom: var(--space-2) !important;
+  margin-bottom: var(--space-3) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.modal-body-edit .input-readonly,
+.modal-body-form .input-readonly {
+  background-color: #e5e7eb !important;
+  color: #6b7280 !important;
+  cursor: not-allowed !important;
+  border-color: transparent !important;
+}
+
 
