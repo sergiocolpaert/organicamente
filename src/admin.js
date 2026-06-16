@@ -664,6 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // WhatsApp Direto
     const phoneClean = String(sub.telefone || '').replace(/\D/g, '');
     const primeirNome = (sub.nome || '').split(' ')[0];
+    const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
     
     let zapText = `Olá, ${primeirNome}! 🌱 Tudo bem?\n\nAqui é a equipe do Organicamente. Passando para confirmar as informações de sua assinatura:\n\n` +
       `🧺 *Cesta:* ${sub.cestaTipo}\n` +
