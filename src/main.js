@@ -1046,7 +1046,8 @@ document.addEventListener('DOMContentLoaded', () => {
       totalMensal: `R$ ${calc.monthlyTotal.toFixed(2).replace('.', ',')}`,
       primeiroPagamento: `R$ ${calc.initialPaymentTotal.toFixed(2).replace('.', ',')}`,
       primeiroPagamentoNota: calc.proportionalNote,
-      formaPagamento: billingType
+      formaPagamento: billingType,
+      statusAssinatura: 'Pendente'
     };
 
     // Payload para o Asaas (backend seguro)
