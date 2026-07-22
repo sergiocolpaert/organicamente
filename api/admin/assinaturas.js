@@ -1,3 +1,11 @@
+import {
+  isSupabaseConfigured,
+  getSubscribersFromSupabase,
+  createSubscriberInSupabase,
+  updateSubscriberInSupabase,
+  deleteSubscriberInSupabase
+} from '../_lib/db.js';
+
 export default async function handler(req, res) {
   // Configura CORS e cabeçalhos
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -23,11 +31,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Token inválido ou sessão expirada.' });
     }
 
-    const sheetsUrl = process.env.GOOGLE_SHEETS_WEBAPP_URL;
-    if (!sheetsUrl) {
-      return res.status(500).json({ error: 'Configuração da planilha (GOOGLE_SHEETS_WEBAPP_URL) ausente na Vercel.' });
-    }
-
+    const sheetsUrl = process.env.GOOGLE_SHEETS_WEBAPP_URL || '';
     const isProduction = process.env.ASAAS_ENV === 'production';
     const asaasBaseUrl = isProduction ? 'https://api.asaas.com/v3' : 'https://sandbox.asaas.com/v3';
     const apiKeyBruno = process.env.ASAAS_API_KEY_BRUNO;
@@ -46,32 +50,38 @@ export default async function handler(req, res) {
     // MÉTODO GET: LISTAR ASSINANTES (CRUZADO COM ASAAS)
     // ==========================================================================
     if (req.method === 'GET') {
-      const sheetsRes = await fetch(`${sheetsUrl}?token=${token}`, {
-        method: 'GET'
-      });
+      let planData = [];
 
-      if (!sheetsRes.ok) {
-        const errText = await sheetsRes.text();
-        throw new Error(`Erro ao acessar planilha Google: ${errText}`);
+      if (isSupabaseConfigured()) {
+        try {
+          planData = await getSubscribersFromSupabase();
+        } catch (supabaseErr) {
+          console.error('Erro no Supabase, caindo para fallback Sheets:', supabaseErr);
+        }
       }
 
-      const responseText = await sheetsRes.text();
-      const contentType = sheetsRes.headers.get('content-type') || '';
+      if (planData.length === 0 && sheetsUrl) {
+        const sheetsRes = await fetch(`${sheetsUrl}?token=${token}`, {
+          method: 'GET'
+        });
 
-      if (!contentType.includes('application/json')) {
-        console.error('Resposta não-JSON do Google Sheets:', responseText.slice(0, 500));
-        throw new Error('A planilha Google (Web App) retornou uma página de erro (HTML) em vez de JSON. Verifique se a variável GOOGLE_SHEETS_WEBAPP_URL na Vercel termina com "/exec" e se no Apps Script a implantação foi configurada para "Quem tem acesso: Qualquer pessoa" (Anyone).');
-      }
+        if (!sheetsRes.ok) {
+          const errText = await sheetsRes.text();
+          throw new Error(`Erro ao acessar fonte de dados: ${errText}`);
+        }
 
-      let planData;
-      try {
-        planData = JSON.parse(responseText);
-      } catch (e) {
-        throw new Error('Erro ao processar JSON retornado pela planilha Google.');
-      }
+        const responseText = await sheetsRes.text();
+        const contentType = sheetsRes.headers.get('content-type') || '';
 
-      if (planData.result === 'error') {
-        throw new Error(`Erro retornado pela planilha: ${planData.message}`);
+        if (!contentType.includes('application/json')) {
+          throw new Error('A fonte de dados retornou uma resposta inválida.');
+        }
+
+        try {
+          planData = JSON.parse(responseText);
+        } catch (e) {
+          throw new Error('Erro ao processar JSON retornado.');
+        }
       }
 
       if (!Array.isArray(planData) || planData.length === 0) {
@@ -385,64 +395,77 @@ export default async function handler(req, res) {
         // Prossegue em modo de contingência se o Asaas falhar
       }
 
-      // Enviar para o Google Sheets
-      const sheetsRes = await fetch(sheetsUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'create',
-          token: token,
-          data: data
-        })
-      });
+      // Persistir no Supabase PostgreSQL
+      if (isSupabaseConfigured()) {
+        try {
+          await createSubscriberInSupabase(data);
+        } catch (supabaseErr) {
+          console.error('Erro ao salvar no Supabase:', supabaseErr);
+        }
+      }
 
-      if (!sheetsRes.ok) {
-        const errText = await sheetsRes.text();
-        throw new Error(`Erro ao salvar na planilha: ${errText}`);
+      // Enviar para o Google Sheets (modo de compatibilidade/contingência)
+      if (sheetsUrl) {
+        try {
+          await fetch(sheetsUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'create',
+              token: token,
+              data: data
+            })
+          });
+        } catch (sErr) {
+          console.error('Erro no fallback Sheets:', sErr);
+        }
       }
 
       return res.status(200).json({ success: true, message: 'Assinante cadastrado com sucesso!' });
     }
 
     // ==========================================================================
-    // MÉTODO PUT: EDITAR ASSINANTE EXISTENTE (Sheets)
+    // MÉTODO PUT: EDITAR ASSINANTE EXISTENTE
     // ==========================================================================
     if (req.method === 'PUT') {
       const data = req.body;
-      if (!data.cpf || !data.nome) {
-        return res.status(400).json({ error: 'CPF e Nome são campos obrigatórios para edição.' });
+      if (!data.cpf) {
+        return res.status(400).json({ error: 'CPF é um campo obrigatório para edição.' });
       }
 
       if ((data.statusAssinatura === 'Inativo' || data.statusAssinatura === 'Cancelado') && !data.dataStatusAlterado) {
         data.dataStatusAlterado = new Date().toISOString();
       }
 
-      // Envia requisição para a planilha com action "update"
-      const sheetsRes = await fetch(sheetsUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update',
-          token: token,
-          data: data
-        })
-      });
-
-      if (!sheetsRes.ok) {
-        const errText = await sheetsRes.text();
-        throw new Error(`Erro ao atualizar na planilha: ${errText}`);
+      if (isSupabaseConfigured()) {
+        try {
+          await updateSubscriberInSupabase(data.cpf, data);
+        } catch (supabaseErr) {
+          console.error('Erro ao atualizar no Supabase:', supabaseErr);
+        }
       }
 
-      const resData = await sheetsRes.json();
-      if (resData.result === 'error') {
-        return res.status(400).json({ error: resData.message });
+      if (sheetsUrl) {
+        try {
+          await fetch(sheetsUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'update',
+              token: token,
+              data: data
+            })
+          });
+        } catch (sErr) {
+          console.error('Erro no fallback Sheets:', sErr);
+        }
       }
 
       return res.status(200).json({ success: true, message: 'Assinante atualizado com sucesso!' });
     }
 
     // ==========================================================================
-    // MÉTODO DELETE: EXCLUIR ASSINANTE (Sheets)
+    // MÉTODO DELETE: EXCLUIR ASSINANTE
     // ==========================================================================
     if (req.method === 'DELETE') {
       const { cpf } = req.body;
@@ -450,28 +473,31 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'CPF é obrigatório para exclusão.' });
       }
 
-      // Envia requisição para a planilha com action "delete"
-      const sheetsRes = await fetch(sheetsUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'delete',
-          token: token,
-          data: { cpf: cpf }
-        })
-      });
-
-      if (!sheetsRes.ok) {
-        const errText = await sheetsRes.text();
-        throw new Error(`Erro ao excluir na planilha: ${errText}`);
+      if (isSupabaseConfigured()) {
+        try {
+          await deleteSubscriberInSupabase(cpf);
+        } catch (supabaseErr) {
+          console.error('Erro ao excluir no Supabase:', supabaseErr);
+        }
       }
 
-      const resData = await sheetsRes.json();
-      if (resData.result === 'error') {
-        return res.status(400).json({ error: resData.message });
+      if (sheetsUrl) {
+        try {
+          await fetch(sheetsUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'delete',
+              token: token,
+              data: { cpf: cpf }
+            })
+          });
+        } catch (sErr) {
+          console.error('Erro no fallback Sheets:', sErr);
+        }
       }
 
-      return res.status(200).json({ success: true, message: 'Assinante excluído com sucesso!' });
+      return res.status(200).json({ success: true, message: 'Assinante removido com sucesso!' });
     }
 
     return res.status(405).json({ error: 'Método não permitido.' });

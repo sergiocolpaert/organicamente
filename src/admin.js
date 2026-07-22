@@ -2568,6 +2568,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  // Listener para o Botão de Migração Supabase
+  const btnMigrateSupabase = document.getElementById('btn-migrate-supabase');
+  if (btnMigrateSupabase) {
+    btnMigrateSupabase.addEventListener('click', async () => {
+      btnMigrateSupabase.disabled = true;
+      const originalText = btnMigrateSupabase.innerHTML;
+      btnMigrateSupabase.innerHTML = '<span>Migrando dados...</span>';
+
+      try {
+        const token = localStorage.getItem('organicamente_admin_token');
+        const res = await fetch('/api/admin/migrar-supabase', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(`Migração concluída! ${data.migratedCount} de ${data.totalCount} clientes importados para o Supabase PostgreSQL!`, 'success');
+          fetchData();
+        } else {
+          showToast(data.error || 'Erro ao realizar a migração. Verifique as credenciais no servidor.', 'warning');
+        }
+      } catch (err) {
+        console.error('Erro na migração:', err);
+        showToast('Falha na migração para o Supabase.', 'error');
+      } finally {
+        btnMigrateSupabase.disabled = false;
+        btnMigrateSupabase.innerHTML = originalText;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
   // Checagem inicial
   checkSession();
 });
