@@ -242,7 +242,7 @@ export default async function handler(req, res) {
           statusAssinatura: statusAssinatura,
           asaas: asaasInfo || { status: 'DESCONHECIDO' }
         };
-      }));
+      });
 
       return res.status(200).json(responseData);
     }

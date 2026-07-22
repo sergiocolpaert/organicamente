@@ -2715,6 +2715,33 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (_) {}
   });
 
+  // Lógica do Menu Mobile Hamburger
+  const btnToggleMobileSidebar = document.getElementById('btn-toggle-mobile-sidebar');
+  const appSidebar = document.querySelector('.app-sidebar');
+  const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+  function toggleMobileSidebar() {
+    if (appSidebar) appSidebar.classList.toggle('sidebar-open');
+    if (sidebarBackdrop) sidebarBackdrop.classList.toggle('active');
+  }
+
+  if (btnToggleMobileSidebar) {
+    btnToggleMobileSidebar.addEventListener('click', toggleMobileSidebar);
+  }
+  if (sidebarBackdrop) {
+    sidebarBackdrop.addEventListener('click', toggleMobileSidebar);
+  }
+
+  if (navItems) {
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        if (appSidebar && appSidebar.classList.contains('sidebar-open')) {
+          toggleMobileSidebar();
+        }
+      });
+    });
+  }
+
   // Checagem inicial
   checkSession();
 });

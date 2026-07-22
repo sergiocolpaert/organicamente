@@ -2303,4 +2303,145 @@ tr:hover td {
   gap: 10px;
 }
 
+/* ==========================================================================
+   12. RESPONSIVIDADE E ADAPTAÇÃO MOBILE PREMIUM
+   ========================================================================== */
+
+.btn-toggle-sidebar {
+  display: none;
+  background: transparent;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px;
+  color: var(--color-primary);
+  cursor: pointer;
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 49;
+  display: none;
+}
+
+.sidebar-backdrop.active {
+  display: block;
+}
+
+@media (max-width: 992px) {
+  .btn-toggle-sidebar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 270px;
+    height: 100vh;
+    z-index: 50;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .app-sidebar.sidebar-open {
+    left: 0;
+  }
+
+  .app-main {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .app-topbar {
+    padding: var(--space-4);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .topbar-title h1 {
+    font-size: 20px;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px;
+  }
+
+  .dashboard-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .filter-tabs {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filter-tabs .tab-btn {
+    flex-shrink: 0;
+  }
+
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-panel {
+    width: 96% !important;
+    max-height: 92vh !important;
+  }
+
+  .farmer-cards-grid, .basket-cards-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .topbar-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .topbar-actions button span {
+    font-size: 12px;
+  }
+
+  .modal-header h2 {
+    font-size: 18px;
+  }
+}
+
 
