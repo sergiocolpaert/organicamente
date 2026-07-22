@@ -79,9 +79,10 @@ export default async function handler(req, res) {
       }
 
       // Buscar faturas recentes em lote do Asaas para Bruno e Russo para otimizar velocidade
+      // Buscar faturas recentes em lote do Asaas para Bruno e Russo para otimizar velocidade
       let asaasCache = {
-        bruno: { customersByCpf: {}, lastPaymentsByCustomerId: {} },
-        russo: { customersByCpf: {}, lastPaymentsByCustomerId: {} }
+        bruno: { customersByCpf: {}, allPaymentsByCustomerId: {}, lastPaymentsByCustomerId: {} },
+        russo: { customersByCpf: {}, allPaymentsByCustomerId: {}, lastPaymentsByCustomerId: {} }
       };
 
       async function fetchAsaasBatch(apiKey, produtorKey) {
@@ -112,8 +113,14 @@ export default async function handler(req, res) {
             const payData = await payRes.json();
             if (payData.data) {
               payData.data.forEach(p => {
-                if (p.customer && !asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer]) {
-                  asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer] = p;
+                if (p.customer) {
+                  if (!asaasCache[produtorKey].allPaymentsByCustomerId[p.customer]) {
+                    asaasCache[produtorKey].allPaymentsByCustomerId[p.customer] = [];
+                  }
+                  asaasCache[produtorKey].allPaymentsByCustomerId[p.customer].push(p);
+                  if (!asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer]) {
+                    asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer] = p;
+                  }
                 }
               });
             }
@@ -140,18 +147,40 @@ export default async function handler(req, res) {
           });
           if (!custRes.ok) return null;
           const custData = await custRes.json();
-          if (!custData.data || custData.data.length === 0) return { status: 'SEM_CLIENTE' };
+          if (!custData.data || custData.data.length === 0) return { status: 'SEM_CLIENTE', allPayments: [], totalPaid: 0, paidCount: 0 };
 
           const customerId = custData.data[0].id;
-          const payRes = await fetch(`${asaasBaseUrl}/payments?customer=${customerId}&limit=1`, {
+          const payRes = await fetch(`${asaasBaseUrl}/payments?customer=${customerId}&limit=100`, {
             method: 'GET',
             headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
           });
-          if (!payRes.ok) return { status: 'SEM_COBRANCA' };
+          if (!payRes.ok) return { status: 'SEM_COBRANCA', allPayments: [], totalPaid: 0, paidCount: 0 };
           const payData = await payRes.json();
-          if (!payData.data || payData.data.length === 0) return { status: 'SEM_COBRANCA' };
+          if (!payData.data || payData.data.length === 0) return { status: 'SEM_COBRANCA', allPayments: [], totalPaid: 0, paidCount: 0 };
 
-          const payment = payData.data[0];
+          const payments = payData.data;
+          const payment = payments[0];
+
+          let totalPaid = 0;
+          let paidCount = 0;
+          const mappedPayments = payments.map(p => {
+            const isPaid = p.status === 'RECEIVED' || p.status === 'CONFIRMED';
+            if (isPaid) {
+              totalPaid += (p.value || 0);
+              paidCount++;
+            }
+            return {
+              id: p.id,
+              status: p.status,
+              dueDate: p.dueDate,
+              value: p.value,
+              billingType: p.billingType,
+              invoiceUrl: p.invoiceUrl || p.bankSlipUrl || '',
+              paymentDate: p.paymentDate || '',
+              confirmedDate: p.confirmedDate || ''
+            };
+          });
+
           return {
             status: payment.status,
             dueDate: payment.dueDate,
@@ -159,7 +188,10 @@ export default async function handler(req, res) {
             billingType: payment.billingType,
             invoiceUrl: payment.invoiceUrl || payment.bankSlipUrl || '',
             paymentDate: payment.paymentDate || '',
-            confirmedDate: payment.confirmedDate || ''
+            confirmedDate: payment.confirmedDate || '',
+            allPayments: mappedPayments,
+            totalPaid: totalPaid,
+            paidCount: paidCount
           };
         } catch (e) {
           return null;
@@ -175,19 +207,43 @@ export default async function handler(req, res) {
         let asaasInfo = null;
         const cachedCustomer = asaasCache[produtorKey].customersByCpf[cpfClean];
         if (cachedCustomer) {
+          const cachedPayments = asaasCache[produtorKey].allPaymentsByCustomerId[cachedCustomer.id] || [];
           const cachedPayment = asaasCache[produtorKey].lastPaymentsByCustomerId[cachedCustomer.id];
-          if (cachedPayment) {
+          if (cachedPayment || cachedPayments.length > 0) {
+            let totalPaid = 0;
+            let paidCount = 0;
+            const mappedPayments = cachedPayments.map(p => {
+              const isPaid = p.status === 'RECEIVED' || p.status === 'CONFIRMED';
+              if (isPaid) {
+                totalPaid += (p.value || 0);
+                paidCount++;
+              }
+              return {
+                id: p.id,
+                status: p.status,
+                dueDate: p.dueDate,
+                value: p.value,
+                billingType: p.billingType,
+                invoiceUrl: p.invoiceUrl || p.bankSlipUrl || '',
+                paymentDate: p.paymentDate || '',
+                confirmedDate: p.confirmedDate || ''
+              };
+            });
+
             asaasInfo = {
-              status: cachedPayment.status,
-              dueDate: cachedPayment.dueDate,
-              value: cachedPayment.value,
-              billingType: cachedPayment.billingType,
-              invoiceUrl: cachedPayment.invoiceUrl || cachedPayment.bankSlipUrl || '',
-              paymentDate: cachedPayment.paymentDate || '',
-              confirmedDate: cachedPayment.confirmedDate || ''
+              status: cachedPayment ? cachedPayment.status : 'DESCONHECIDO',
+              dueDate: cachedPayment ? cachedPayment.dueDate : '',
+              value: cachedPayment ? cachedPayment.value : 0,
+              billingType: cachedPayment ? cachedPayment.billingType : '',
+              invoiceUrl: cachedPayment ? (cachedPayment.invoiceUrl || cachedPayment.bankSlipUrl || '') : '',
+              paymentDate: cachedPayment ? (cachedPayment.paymentDate || '') : '',
+              confirmedDate: cachedPayment ? (cachedPayment.confirmedDate || '') : '',
+              allPayments: mappedPayments,
+              totalPaid: totalPaid,
+              paidCount: paidCount
             };
           } else {
-            asaasInfo = { status: 'SEM_COBRANCA' };
+            asaasInfo = { status: 'SEM_COBRANCA', allPayments: [], totalPaid: 0, paidCount: 0 };
           }
         }
 

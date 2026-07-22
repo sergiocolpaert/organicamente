@@ -670,27 +670,15 @@ document.addEventListener('DOMContentLoaded', () => {
       mVencimento.textContent = 'Não gerado';
     }
 
-    // Valor Pago e Data de Pagamento Asaas
-    if (sub.asaas) {
-      const isPaid = sub.asaas.status === 'RECEIVED' || sub.asaas.status === 'CONFIRMED';
-      if (isPaid) {
-        mValorPago.textContent = formatMoney(sub.asaas.value || 0);
-        if (sub.asaas.paymentDate || sub.asaas.confirmedDate) {
-          const rawDate = sub.asaas.paymentDate || sub.asaas.confirmedDate;
-          mDataPagamento.textContent = new Date(rawDate + 'T12:00:00').toLocaleDateString('pt-BR');
-        } else {
-          mDataPagamento.textContent = 'Confirmado';
-        }
-      } else {
-        mValorPago.textContent = 'Não efetuado';
-        mDataPagamento.textContent = 'Aguardando';
-      }
-    } else {
-      mValorPago.textContent = 'Sem Registro';
-      mDataPagamento.textContent = 'Sem Registro';
-    }
+    // LTV e Contagem de Mensalidades
+    const mLtvTotal = document.getElementById('m-ltv-total');
+    const mLtvCount = document.getElementById('m-ltv-count');
+    const mPaymentsTableBody = document.getElementById('m-payments-table-body');
 
-    // Status Asaas
+    if (mLtvTotal) mLtvTotal.textContent = formatMoney(sub.asaas ? (sub.asaas.totalPaid || 0) : 0);
+    if (mLtvCount) mLtvCount.textContent = `${sub.asaas ? (sub.asaas.paidCount || 0) : 0} faturas pagas`;
+
+    // Status Asaas Atual
     let asaasLabel = 'Nenhum faturamento registrado.';
     if (sub.asaas) {
       if (sub.asaas.status === 'RECEIVED' || sub.asaas.status === 'CONFIRMED') {
@@ -715,6 +703,49 @@ document.addEventListener('DOMContentLoaded', () => {
       mRowInvoice.classList.add('hidden');
     }
 
+    // Tabela de Histórico de Pagamentos Asaas
+    if (mPaymentsTableBody) {
+      mPaymentsTableBody.innerHTML = '';
+      const allPayments = (sub.asaas && sub.asaas.allPayments) ? sub.asaas.allPayments : [];
+      if (allPayments.length === 0) {
+        mPaymentsTableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--color-text-secondary); padding: 16px;">Nenhum pagamento registrado no Asaas.</td></tr>';
+      } else {
+        allPayments.forEach(p => {
+          const row = document.createElement('tr');
+          const dueStr = p.dueDate ? new Date(p.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-';
+          const pDate = p.paymentDate || p.confirmedDate;
+          const payStr = pDate ? new Date(pDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-';
+          
+          let badgeClass = 'pendente';
+          let statusText = p.status || 'DESCONHECIDO';
+          if (p.status === 'RECEIVED' || p.status === 'CONFIRMED') {
+            badgeClass = 'paga';
+            statusText = 'PAGO';
+          } else if (p.status === 'PENDING') {
+            badgeClass = 'pendente';
+            statusText = 'PENDENTE';
+          } else if (p.status === 'OVERDUE') {
+            badgeClass = 'atrasada';
+            statusText = 'ATRASADO';
+          }
+
+          const linkHtml = p.invoiceUrl 
+            ? `<a href="${p.invoiceUrl}" target="_blank" style="color: var(--color-primary-light); font-weight: 600;">Ver <i data-lucide="arrow-up-right"></i></a>` 
+            : '-';
+
+          row.innerHTML = `
+            <td>${dueStr}</td>
+            <td>${payStr}</td>
+            <td><strong>${formatMoney(p.value || 0)}</strong></td>
+            <td>${p.billingType || 'PIX'}</td>
+            <td><span class="badge ${badgeClass}" style="font-size: 10px;">${statusText}</span></td>
+            <td>${linkHtml}</td>
+          `;
+          mPaymentsTableBody.appendChild(row);
+        });
+      }
+    }
+
     // Observações
     mObservacoes.textContent = sub.observacoes || 'Nenhuma observação informada.';
 
@@ -730,7 +761,46 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `;
 
-      if (sub.asaas) {
+      const allPayments = (sub.asaas && sub.asaas.allPayments) ? sub.asaas.allPayments : [];
+      if (allPayments.length > 0) {
+        // Ordenar pagamentos por data (mais antigo primeiro para timeline cronológica)
+        const sortedPayments = [...allPayments].reverse();
+        sortedPayments.forEach(p => {
+          if (p.status === 'RECEIVED' || p.status === 'CONFIRMED') {
+            const pDate = p.paymentDate || p.confirmedDate || p.dueDate;
+            const formattedPDate = pDate ? new Date(pDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Confirmado';
+            timelineHtml += `
+              <div class="timeline-item">
+                <div class="timeline-marker color-success"></div>
+                <div class="timeline-content">
+                  <span class="timeline-title">Pagamento Confirmado no Asaas</span>
+                  <span class="timeline-date">Valor: ${formatMoney(p.value || 0)} | Forma: ${p.billingType || 'PIX'} | Data: ${formattedPDate}</span>
+                </div>
+              </div>
+            `;
+          } else if (p.status === 'PENDING') {
+            timelineHtml += `
+              <div class="timeline-item">
+                <div class="timeline-marker color-warning"></div>
+                <div class="timeline-content">
+                  <span class="timeline-title">Cobrança Gerada (Pendente)</span>
+                  <span class="timeline-date">Valor: ${formatMoney(p.value || 0)} | Vencimento: ${p.dueDate ? new Date(p.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</span>
+                </div>
+              </div>
+            `;
+          } else if (p.status === 'OVERDUE') {
+            timelineHtml += `
+              <div class="timeline-item">
+                <div class="timeline-marker color-danger"></div>
+                <div class="timeline-content">
+                  <span class="timeline-title">Cobrança Atrasada</span>
+                  <span class="timeline-date">Valor: ${formatMoney(p.value || 0)} | Vencida em ${p.dueDate ? new Date(p.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</span>
+                </div>
+              </div>
+            `;
+          }
+        });
+      } else if (sub.asaas) {
         if (sub.asaas.status === 'RECEIVED' || sub.asaas.status === 'CONFIRMED') {
           const pDate = sub.asaas.paymentDate || sub.asaas.confirmedDate || sub.asaas.dueDate;
           const formattedPDate = pDate ? new Date(pDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Confirmado';
@@ -740,16 +810,6 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="timeline-content">
                 <span class="timeline-title">Pagamento Confirmado no Asaas</span>
                 <span class="timeline-date">Valor: ${formatMoney(sub.asaas.value || 0)} em ${formattedPDate}</span>
-              </div>
-            </div>
-          `;
-        } else if (sub.asaas.status === 'PENDING') {
-          timelineHtml += `
-            <div class="timeline-item">
-              <div class="timeline-marker color-warning"></div>
-              <div class="timeline-content">
-                <span class="timeline-title">Cobrança Gerada (Pendente)</span>
-                <span class="timeline-date">Vencimento: ${sub.asaas.dueDate ? new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</span>
               </div>
             </div>
           `;

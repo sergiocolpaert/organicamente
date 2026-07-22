@@ -418,7 +418,7 @@
         <div class="modal-section-grid" style="grid-template-columns: 1fr;">
           <!-- Financeiro -->
           <div class="modal-section" style="width: 100%;">
-            <h3><i data-lucide="credit-card"></i> Financeiro (Asaas)</h3>
+            <h3><i data-lucide="credit-card"></i> Resumo Financeiro & LTV</h3>
             <div class="details-list">
               <div class="detail-item">
                 <span class="label">Cobrança Mensal</span>
@@ -436,24 +436,50 @@
                 <span class="label">Último Vencimento</span>
                 <span class="value" id="m-vencimento">-</span>
               </div>
-              <div class="detail-item">
-                <span class="label">Valor Pago Asaas</span>
-                <span class="value text-success font-bold" id="m-valor-pago">-</span>
+              <div class="detail-item" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 14px; border-radius: var(--radius-md);">
+                <span class="label" style="color: #166534 !important;">LTV Acumulado (Total Pago)</span>
+                <span class="value text-success font-bold" id="m-ltv-total" style="font-size: 16px;">R$ 0,00</span>
               </div>
-              <div class="detail-item">
-                <span class="label">Data de Pagamento</span>
-                <span class="value" id="m-data-pagamento">-</span>
+              <div class="detail-item" style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 10px 14px; border-radius: var(--radius-md);">
+                <span class="label" style="color: #166534 !important;">Total de Mensalidades Pagas</span>
+                <span class="value font-bold" id="m-ltv-count" style="font-size: 15px; color: #166534;">0 faturas</span>
               </div>
             </div>
 
-            <div class="asaas-details-box" id="m-asaas-box" style="margin-top: 20px;">
+            <div class="asaas-details-box" id="m-asaas-box" style="margin-top: 16px;">
               <div class="asaas-row">
-                <span>Status da Cobrança Asaas:</span>
+                <span>Status da Cobrança Atual Asaas:</span>
                 <span class="badge" id="m-asaas-status">-</span>
               </div>
               <div class="asaas-row" id="m-row-invoice">
-                <span>Link da Fatura:</span>
+                <span>Link da Última Fatura:</span>
                 <a href="#" target="_blank" class="btn-link" id="m-link-fatura">Abrir Cobrança <i data-lucide="arrow-up-right"></i></a>
+              </div>
+            </div>
+
+            <!-- Tabela de Histórico de Pagamentos Asaas -->
+            <div style="margin-top: 24px;">
+              <h3><i data-lucide="receipt"></i> Histórico de Faturas Asaas</h3>
+              <div class="table-container" style="max-height: 220px; overflow-y: auto; margin-top: 12px;">
+                <table class="report-table">
+                  <thead>
+                    <tr>
+                      <th>Vencimento</th>
+                      <th>Data Pagamento</th>
+                      <th>Valor</th>
+                      <th>Forma</th>
+                      <th>Status</th>
+                      <th>Fatura</th>
+                    </tr>
+                  </thead>
+                  <tbody id="m-payments-table-body">
+                    <tr>
+                      <td colspan="6" style="text-align: center; color: var(--color-text-secondary); padding: 16px;">
+                        Carregando histórico financeiro...
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
