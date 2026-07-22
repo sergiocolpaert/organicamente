@@ -174,6 +174,42 @@
             </div>
           </div>
         </div>
+
+        <!-- KPI 5: Entradas (30d) -->
+        <div class="kpi-card">
+          <div class="kpi-icon color-1">
+            <i data-lucide="user-plus"></i>
+          </div>
+          <div class="kpi-data">
+            <h3>Entradas (30 dias)</h3>
+            <div class="kpi-value" id="kpi-entries-30d">0</div>
+            <p class="kpi-sub">Novas assinaturas no período</p>
+          </div>
+        </div>
+
+        <!-- KPI 6: Saídas / Churn (30d) -->
+        <div class="kpi-card">
+          <div class="kpi-icon color-danger">
+            <i data-lucide="user-minus"></i>
+          </div>
+          <div class="kpi-data">
+            <h3>Saídas / Churn (30d)</h3>
+            <div class="kpi-value text-danger" id="kpi-churn-30d">0</div>
+            <p class="kpi-sub" id="kpi-churn-rate">Taxa de Churn: 0%</p>
+          </div>
+        </div>
+
+        <!-- KPI 7: Crescimento Líquido -->
+        <div class="kpi-card">
+          <div class="kpi-icon color-2">
+            <i data-lucide="trending-up"></i>
+          </div>
+          <div class="kpi-data">
+            <h3>Crescimento Líquido</h3>
+            <div class="kpi-value" id="kpi-net-growth">+0</div>
+            <p class="kpi-sub">Saldo do período (Entradas - Saídas)</p>
+          </div>
+        </div>
       </section>
 
       <!-- Seção 2: Filtros e Tabela -->
@@ -225,6 +261,10 @@
         <div class="table-footer">
           <span id="table-rows-count">Mostrando 0 assinantes</span>
           <div class="footer-buttons-row">
+            <button id="btn-retention-analytics" class="btn-delivery-report" style="background-color: var(--color-primary-light); color: white;">
+              <i data-lucide="bar-chart-2"></i>
+              <span>Inteligência de Retenção</span>
+            </button>
             <button id="btn-delivery-report" class="btn-delivery-report">
               <i data-lucide="printer"></i>
               <span>Roteiro de Entregas</span>
@@ -317,6 +357,13 @@
         <div class="modal-section" style="margin-top: 20px;">
           <h3><i data-lucide="message-square"></i> Observações</h3>
           <p class="obs-box" id="m-observacoes">Nenhuma observação informada.</p>
+        </div>
+
+        <div class="modal-section" style="margin-top: 20px;">
+          <h3><i data-lucide="activity"></i> Linha do Tempo do Assinante</h3>
+          <div class="timeline-container" id="m-timeline-container">
+            <!-- Timeline renderizada via JS -->
+          </div>
         </div>
       </div>
 
@@ -570,6 +617,23 @@
                   <option value="Cancelado">Cancelado</option>
                 </select>
               </div>
+            </div>
+
+            <!-- Campo dinâmico exibido ao inativar/cancelar -->
+            <div class="form-group hidden" id="edit-motivo-container" style="background: #fff5f5; border: 1.5px solid #fecaca; padding: 16px; border-radius: var(--radius-lg); margin-top: 12px;">
+              <label for="edit-motivoCancelamento" style="color: var(--color-danger) !important;">Motivo do Cancelamento / Inativação *</label>
+              <select id="edit-motivoCancelamento">
+                <option value="" disabled selected>Selecione o motivo da saída...</option>
+                <option value="Preço / Orçamento">Preço / Orçamento</option>
+                <option value="Problema na Entrega / Logística">Problema na Entrega / Logística</option>
+                <option value="Tamanho da Cesta">Tamanho da Cesta (Muito grande/pequena)</option>
+                <option value="Mudança de Endereço / Viagem">Mudança de Endereço / Viagem</option>
+                <option value="Pouco Uso dos Orgânicos">Pouco Uso dos Orgânicos</option>
+                <option value="Pouca Variedade de Itens">Pouca Variedade de Itens</option>
+                <option value="Outros">Outros</option>
+              </select>
+              <label for="edit-motivoDetalhe" style="margin-top: 10px; color: var(--color-text-secondary) !important;">Observações do Cancelamento</label>
+              <input type="text" id="edit-motivoDetalhe" placeholder="Ex: Cliente se mudou para SP / Achou a cesta muito grande">
             </div>
 
             <div class="form-group">
@@ -903,6 +967,94 @@
           <span>Imprimir Roteiro</span>
         </button>
         <button class="btn-primary" type="button" id="btn-close-delivery-footer" style="margin-left: auto;">
+          <span>Fechar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 7. MODAL: INTELIGÊNCIA DE RETENÇÃO & CHURN -->
+  <!-- ========================================== -->
+  <div id="retention-analytics-modal" class="modal-backdrop">
+    <div class="modal-panel max-width-large">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <h2>Inteligência de Retenção & Churn Analytics</h2>
+          <p style="font-size: 13px; color: var(--color-text-secondary);">Análise de entradas, cancelamentos e principais motivos de saída</p>
+        </div>
+        <button id="btn-close-retention-modal" class="btn-close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body-form" style="padding: 24px; max-height: 75vh; overflow-y: auto;">
+        <!-- Indicadores de Retenção -->
+        <div class="kpi-grid" style="margin-bottom: 24px;">
+          <div class="kpi-card">
+            <div class="kpi-icon color-1"><i data-lucide="user-plus"></i></div>
+            <div class="kpi-data">
+              <h3>Novos Assinantes (30d)</h3>
+              <div class="kpi-value" id="modal-kpi-entries">0</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon color-danger"><i data-lucide="user-minus"></i></div>
+            <div class="kpi-data">
+              <h3>Cancelamentos (30d)</h3>
+              <div class="kpi-value text-danger" id="modal-kpi-churn">0</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon color-2"><i data-lucide="trending-up"></i></div>
+            <div class="kpi-data">
+              <h3>Saldo Líquido</h3>
+              <div class="kpi-value" id="modal-kpi-net">+0</div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon color-3"><i data-lucide="pie-chart"></i></div>
+            <div class="kpi-data">
+              <h3>Taxa de Churn</h3>
+              <div class="kpi-value" id="modal-kpi-rate">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção: Motivos de Cancelamento -->
+        <div class="form-section-column">
+          <h3><i data-lucide="pie-chart"></i> Motivos Principais de Cancelamento</h3>
+          <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 12px;">
+            Distribuição percentual dos motivos informados na inativação de assinaturas:
+          </p>
+          <div id="churn-reasons-bars-container" class="distribution-bars" style="display: flex; flex-direction: column; gap: 12px;">
+            <!-- Preenchido via JS -->
+          </div>
+        </div>
+
+        <!-- Seção: Lista de Clientes Inativos Recentes -->
+        <div class="form-section-column" style="margin-top: 24px;">
+          <h3><i data-lucide="user-x"></i> Histórico de Saídas / Inativações</h3>
+          <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+            <table class="report-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Produtor / Cesta</th>
+                  <th>Data Alteração</th>
+                  <th>Motivo Registrado</th>
+                </tr>
+              </thead>
+              <tbody id="churn-history-table-body">
+                <!-- Preenchido via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-primary" type="button" id="btn-close-retention-footer" style="margin-left: auto;">
           <span>Fechar</span>
         </button>
       </div>

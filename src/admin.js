@@ -48,6 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const distRussoQty = document.getElementById('dist-russo-qty');
   const distBrunoBar = document.getElementById('dist-bruno-bar');
   const distRussoBar = document.getElementById('dist-russo-bar');
+  const kpiEntries30d = document.getElementById('kpi-entries-30d');
+  const kpiChurn30d = document.getElementById('kpi-churn-30d');
+  const kpiNetGrowth = document.getElementById('kpi-net-growth');
+  const kpiChurnRate = document.getElementById('kpi-churn-rate');
+
+  // Seletores DOM - Retenção & Churn
+  const btnRetentionAnalytics = document.getElementById('btn-retention-analytics');
+  const retentionModal = document.getElementById('retention-analytics-modal');
+  const btnCloseRetentionModal = document.getElementById('btn-close-retention-modal');
+  const btnCloseRetentionFooter = document.getElementById('btn-close-retention-footer');
 
   // Seletores DOM - Novo Assinante
   const btnNewSubscriber = document.getElementById('btn-new-subscriber');
@@ -91,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const mValorPago = document.getElementById('m-valor-pago');
   const mDataPagamento = document.getElementById('m-data-pagamento');
   const mObservacoes = document.getElementById('m-observacoes');
+  const mTimelineContainer = document.getElementById('m-timeline-container');
   const btnModalCopyAddress = document.getElementById('btn-modal-copy-address');
   const modalLinkMaps = document.getElementById('modal-link-maps');
   const modalBtnWhatsapp = document.getElementById('modal-btn-whatsapp');
@@ -99,6 +110,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const editSubscriberForm = document.getElementById('edit-subscriber-form');
   const editOriginalCpf = document.getElementById('edit-original-cpf');
   const editOriginalDataHora = document.getElementById('edit-original-datahora');
+  const editStatusAssinatura = document.getElementById('edit-statusAssinatura');
+  const editMotivoContainer = document.getElementById('edit-motivo-container');
+  const editMotivoCancelamento = document.getElementById('edit-motivoCancelamento');
+  const editMotivoDetalhe = document.getElementById('edit-motivoDetalhe');
   const modalViewFooter = document.getElementById('modal-view-footer');
   const modalEditFooter = document.getElementById('modal-edit-footer');
   const btnModalEdit = document.getElementById('btn-modal-edit');
@@ -500,6 +515,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let brunoCount = 0;
     let russoCount = 0;
 
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    let entries30d = 0;
+    let churn30d = 0;
+
     subscribers.forEach(sub => {
       // Assinante ativo apenas se o status interno da assinatura for 'Ativo'
       const isActive = (sub.statusAssinatura === 'Ativo');
@@ -527,11 +547,44 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (produtorLower.includes('russo') || produtorLower.includes('antônio') || produtorLower.includes('antonio')) {
         russoCount++;
       }
+
+      // Entradas nos últimos 30 dias
+      if (sub.dataHora) {
+        const regDate = new Date(sub.dataHora);
+        if (!isNaN(regDate.getTime()) && regDate >= thirtyDaysAgo) {
+          entries30d++;
+        }
+      }
+
+      // Saídas / Churn nos últimos 30 dias
+      const isInactive = sub.statusAssinatura === 'Inativo' || sub.statusAssinatura === 'Cancelado';
+      if (isInactive) {
+        const changeDateStr = sub.dataStatusAlterado || sub.dataHora;
+        if (changeDateStr) {
+          const changeDate = new Date(changeDateStr);
+          if (!isNaN(changeDate.getTime()) && changeDate >= thirtyDaysAgo) {
+            churn30d++;
+          }
+        }
+      }
     });
 
     kpiMrr.textContent = formatMoney(mrrTotal);
     kpiActives.textContent = activeCount;
     kpiPending.textContent = pendingCount;
+
+    // Métricas de Churn & Retenção
+    const netGrowth = entries30d - churn30d;
+    const baseTotal = activeCount + churn30d;
+    const churnRate = baseTotal > 0 ? ((churn30d / baseTotal) * 100).toFixed(1) : '0.0';
+
+    if (kpiEntries30d) kpiEntries30d.textContent = entries30d;
+    if (kpiChurn30d) kpiChurn30d.textContent = churn30d;
+    if (kpiNetGrowth) {
+      kpiNetGrowth.textContent = (netGrowth >= 0 ? `+${netGrowth}` : `${netGrowth}`);
+      kpiNetGrowth.style.color = netGrowth >= 0 ? 'var(--color-primary-light)' : 'var(--color-danger)';
+    }
+    if (kpiChurnRate) kpiChurnRate.textContent = `Taxa de Churn: ${churnRate}%`;
 
     const totalProdutores = brunoCount + russoCount;
     if (totalProdutores > 0) {
@@ -664,6 +717,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Observações
     mObservacoes.textContent = sub.observacoes || 'Nenhuma observação informada.';
+
+    // Renderização da Linha do Tempo (Timeline)
+    if (mTimelineContainer) {
+      let timelineHtml = `
+        <div class="timeline-item">
+          <div class="timeline-marker color-primary"></div>
+          <div class="timeline-content">
+            <span class="timeline-title">Inscrição Realizada</span>
+            <span class="timeline-date">${sub.dataHora ? new Date(sub.dataHora).toLocaleString('pt-BR') : 'Data não informada'}</span>
+          </div>
+        </div>
+      `;
+
+      if (sub.asaas) {
+        if (sub.asaas.status === 'RECEIVED' || sub.asaas.status === 'CONFIRMED') {
+          const pDate = sub.asaas.paymentDate || sub.asaas.confirmedDate || sub.asaas.dueDate;
+          const formattedPDate = pDate ? new Date(pDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Confirmado';
+          timelineHtml += `
+            <div class="timeline-item">
+              <div class="timeline-marker color-success"></div>
+              <div class="timeline-content">
+                <span class="timeline-title">Pagamento Confirmado no Asaas</span>
+                <span class="timeline-date">Valor: ${formatMoney(sub.asaas.value || 0)} em ${formattedPDate}</span>
+              </div>
+            </div>
+          `;
+        } else if (sub.asaas.status === 'PENDING') {
+          timelineHtml += `
+            <div class="timeline-item">
+              <div class="timeline-marker color-warning"></div>
+              <div class="timeline-content">
+                <span class="timeline-title">Cobrança Gerada (Pendente)</span>
+                <span class="timeline-date">Vencimento: ${sub.asaas.dueDate ? new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      if (sub.statusAssinatura === 'Inativo' || sub.statusAssinatura === 'Cancelado') {
+        const statusDate = sub.dataStatusAlterado ? new Date(sub.dataStatusAlterado).toLocaleDateString('pt-BR') : 'Data não informada';
+        timelineHtml += `
+          <div class="timeline-item">
+            <div class="timeline-marker color-danger"></div>
+            <div class="timeline-content">
+              <span class="timeline-title">Status Alterado para ${sub.statusAssinatura}</span>
+              <span class="timeline-date">Data: ${statusDate}</span>
+              <div class="timeline-desc"><strong>Motivo:</strong> ${sub.motivoCancelamento || 'Não informado'}${sub.motivoDetalhe ? ' (' + sub.motivoDetalhe + ')' : ''}</div>
+            </div>
+          </div>
+        `;
+      } else if (sub.statusAssinatura === 'Ativo') {
+        timelineHtml += `
+          <div class="timeline-item">
+            <div class="timeline-marker color-success"></div>
+            <div class="timeline-content">
+              <span class="timeline-title">Assinatura Ativa & Operacional</span>
+              <span class="timeline-date">Cliente ativo no plano de cestas</span>
+            </div>
+          </div>
+        `;
+      }
+
+      mTimelineContainer.innerHTML = timelineHtml;
+    }
 
     // Botão de Copiar Endereço
     btnModalCopyAddress.onclick = () => {
@@ -940,7 +1058,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('edit-horario').value = selectedSubscriber.horario || '';
     document.getElementById('edit-comoConheceu').value = selectedSubscriber.comoConheceu || '';
     document.getElementById('edit-observacoes').value = selectedSubscriber.observacoes || '';
-    document.getElementById('edit-statusAssinatura').value = selectedSubscriber.statusAssinatura || 'Pendente';
+    const currentStatus = selectedSubscriber.statusAssinatura || 'Pendente';
+    document.getElementById('edit-statusAssinatura').value = currentStatus;
+    
+    if (currentStatus === 'Inativo' || currentStatus === 'Cancelado') {
+      if (editMotivoContainer) editMotivoContainer.classList.remove('hidden');
+      if (editMotivoCancelamento) editMotivoCancelamento.value = selectedSubscriber.motivoCancelamento || '';
+      if (editMotivoDetalhe) editMotivoDetalhe.value = selectedSubscriber.motivoDetalhe || '';
+    } else {
+      if (editMotivoContainer) editMotivoContainer.classList.add('hidden');
+      if (editMotivoCancelamento) editMotivoCancelamento.value = '';
+      if (editMotivoDetalhe) editMotivoDetalhe.value = '';
+    }
     
     // Selects
     document.getElementById('edit-produtor').value = selectedSubscriber.produtor || 'Russo e Família';
@@ -956,6 +1085,17 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('edit-primeiropagamento').value = selectedSubscriber.primeiroPagamento || 'R$ 0,00';
 
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  if (editStatusAssinatura) {
+    editStatusAssinatura.addEventListener('change', () => {
+      const val = editStatusAssinatura.value;
+      if (val === 'Inativo' || val === 'Cancelado') {
+        if (editMotivoContainer) editMotivoContainer.classList.remove('hidden');
+      } else {
+        if (editMotivoContainer) editMotivoContainer.classList.add('hidden');
+      }
+    });
   }
 
   function exitEditMode() {
@@ -983,11 +1123,34 @@ document.addEventListener('DOMContentLoaded', () => {
       // Validações básicas de HTML
       if (!editSubscriberForm.reportValidity()) return;
 
+      const statusAssinaturaVal = document.getElementById('edit-statusAssinatura').value;
+      const isInactiveOrCancelled = statusAssinaturaVal === 'Inativo' || statusAssinaturaVal === 'Cancelado';
+
+      if (isInactiveOrCancelled && editMotivoCancelamento && !editMotivoCancelamento.value) {
+        alert('Por favor, selecione um motivo para o cancelamento/inativação.');
+        editMotivoCancelamento.focus();
+        return;
+      }
+
       btnEditSave.disabled = true;
       const originalText = btnEditSave.innerHTML;
       btnEditSave.innerHTML = '<span>Salvando...</span>';
 
       const token = localStorage.getItem('organicamente_admin_token');
+
+      let motivoCancelamentoVal = '';
+      let motivoDetalheVal = '';
+      let dataStatusAlteradoVal = selectedSubscriber.dataStatusAlterado || '';
+
+      if (isInactiveOrCancelled) {
+        motivoCancelamentoVal = editMotivoCancelamento ? editMotivoCancelamento.value : 'Não informado';
+        motivoDetalheVal = editMotivoDetalhe ? editMotivoDetalhe.value.trim() : '';
+        if (!dataStatusAlteradoVal || selectedSubscriber.statusAssinatura !== statusAssinaturaVal) {
+          dataStatusAlteradoVal = new Date().toISOString();
+        }
+      } else {
+        dataStatusAlteradoVal = '';
+      }
 
       // Coleta dados
       const updatedData = {
@@ -1010,7 +1173,10 @@ document.addEventListener('DOMContentLoaded', () => {
         vizinho: document.getElementById('edit-vizinho').value.trim() || 'Deixar no local',
         comoConheceu: document.getElementById('edit-comoConheceu').value.trim() || 'Não informado',
         observacoes: document.getElementById('edit-observacoes').value.trim() || 'Nenhuma',
-        statusAssinatura: document.getElementById('edit-statusAssinatura').value,
+        statusAssinatura: statusAssinaturaVal,
+        motivoCancelamento: motivoCancelamentoVal,
+        motivoDetalhe: motivoDetalheVal,
+        dataStatusAlterado: dataStatusAlteradoVal,
         totalMensal: document.getElementById('edit-totalmensal').value,
         primeiroPagamento: document.getElementById('edit-primeiropagamento').value,
         formaPagamento: document.getElementById('edit-forma-pagamento').value,
@@ -1288,6 +1454,134 @@ document.addEventListener('DOMContentLoaded', () => {
       return `${clean.slice(0, 5)}-${clean.slice(5)}`;
     }
     return cep;
+  }
+
+  // ==========================================================================
+  // 10. MODAL DE INTELIGÊNCIA DE RETENÇÃO & CHURN ANALYTICS
+  // ==========================================================================
+
+  if (btnRetentionAnalytics) {
+    btnRetentionAnalytics.addEventListener('click', () => {
+      openRetentionModal();
+    });
+  }
+
+  if (btnCloseRetentionModal) {
+    btnCloseRetentionModal.addEventListener('click', () => {
+      retentionModal.classList.remove('active');
+    });
+  }
+
+  if (btnCloseRetentionFooter) {
+    btnCloseRetentionFooter.addEventListener('click', () => {
+      retentionModal.classList.remove('active');
+    });
+  }
+
+  function openRetentionModal() {
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    let entries30d = 0;
+    let churn30d = 0;
+    let activeCount = 0;
+    const reasonsCount = {};
+    const inactiveList = [];
+
+    subscribers.forEach(sub => {
+      if (sub.statusAssinatura === 'Ativo') activeCount++;
+
+      if (sub.dataHora) {
+        const regDate = new Date(sub.dataHora);
+        if (!isNaN(regDate.getTime()) && regDate >= thirtyDaysAgo) entries30d++;
+      }
+
+      const isInactive = sub.statusAssinatura === 'Inativo' || sub.statusAssinatura === 'Cancelado';
+      if (isInactive) {
+        inactiveList.push(sub);
+
+        const changeDateStr = sub.dataStatusAlterado || sub.dataHora;
+        if (changeDateStr) {
+          const changeDate = new Date(changeDateStr);
+          if (!isNaN(changeDate.getTime()) && changeDate >= thirtyDaysAgo) churn30d++;
+        }
+
+        const reason = sub.motivoCancelamento || 'Outros / Não especificado';
+        reasonsCount[reason] = (reasonsCount[reason] || 0) + 1;
+      }
+    });
+
+    const netGrowth = entries30d - churn30d;
+    const baseTotal = activeCount + churn30d;
+    const churnRate = baseTotal > 0 ? ((churn30d / baseTotal) * 100).toFixed(1) : '0.0';
+
+    const modalEntries = document.getElementById('modal-kpi-entries');
+    const modalChurn = document.getElementById('modal-kpi-churn');
+    const modalNet = document.getElementById('modal-kpi-net');
+    const modalRate = document.getElementById('modal-kpi-rate');
+
+    if (modalEntries) modalEntries.textContent = entries30d;
+    if (modalChurn) modalChurn.textContent = churn30d;
+    if (modalNet) {
+      modalNet.textContent = (netGrowth >= 0 ? `+${netGrowth}` : `${netGrowth}`);
+      modalNet.style.color = netGrowth >= 0 ? 'var(--color-primary-light)' : 'var(--color-danger)';
+    }
+    if (modalRate) modalRate.textContent = `${churnRate}%`;
+
+    // Renderização das Barras de Motivo
+    const barsContainer = document.getElementById('churn-reasons-bars-container');
+    if (barsContainer) {
+      barsContainer.innerHTML = '';
+      const totalReasons = Object.values(reasonsCount).reduce((a, b) => a + b, 0);
+
+      if (totalReasons === 0) {
+        barsContainer.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center;">Nenhum cancelamento ou inativação registrada com motivo até o momento.</p>';
+      } else {
+        Object.entries(reasonsCount)
+          .sort((a, b) => b[1] - a[1])
+          .forEach(([reason, count]) => {
+            const pct = Math.round((count / totalReasons) * 100);
+            const barItem = document.createElement('div');
+            barItem.className = 'bar-item';
+            barItem.innerHTML = `
+              <div class="bar-label" style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+                <span><strong>${reason}</strong></span>
+                <span style="color: var(--color-danger); font-weight: 600;">${count} (${pct}%)</span>
+              </div>
+              <div class="bar-track" style="height: 10px; background: #fee2e2; border-radius: 6px; overflow: hidden;">
+                <div class="bar-fill color-danger" style="width: ${pct}%; height: 100%; background: var(--color-danger); border-radius: 6px; transition: width 0.4s ease;"></div>
+              </div>
+            `;
+            barsContainer.appendChild(barItem);
+          });
+      }
+    }
+
+    // Renderização da Tabela de Inativos
+    const historyTbody = document.getElementById('churn-history-table-body');
+    if (historyTbody) {
+      historyTbody.innerHTML = '';
+
+      if (inactiveList.length === 0) {
+        historyTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--color-text-secondary); padding: 16px;">Nenhum cliente inativo ou cancelado no registro.</td></tr>';
+      } else {
+        inactiveList.forEach(sub => {
+          const row = document.createElement('tr');
+          const dateStr = sub.dataStatusAlterado ? new Date(sub.dataStatusAlterado).toLocaleDateString('pt-BR') : (sub.dataHora ? new Date(sub.dataHora).toLocaleDateString('pt-BR') : '-');
+          const reasonStr = sub.motivoCancelamento ? `${sub.motivoCancelamento}${sub.motivoDetalhe ? ' (' + sub.motivoDetalhe + ')' : ''}` : 'Não informado';
+
+          row.innerHTML = `
+            <td><strong>${sub.nome}</strong><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.email}</span></td>
+            <td>${sub.produtor}<br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.cestaTipo}</span></td>
+            <td>${dateStr}</td>
+            <td><span class="badge atrasada" style="font-size: 10px;">${sub.statusAssinatura}</span><br><span style="font-size: 11px; color: var(--color-text-secondary);">${reasonStr}</span></td>
+          `;
+          historyTbody.appendChild(row);
+        });
+      }
+    }
+
+    if (retentionModal) retentionModal.classList.add('active');
+    if (window.lucide) window.lucide.createIcons();
   }
 
   // Checagem inicial

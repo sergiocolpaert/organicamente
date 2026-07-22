@@ -335,6 +335,10 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'CPF e Nome são campos obrigatórios para edição.' });
       }
 
+      if ((data.statusAssinatura === 'Inativo' || data.statusAssinatura === 'Cancelado') && !data.dataStatusAlterado) {
+        data.dataStatusAlterado = new Date().toISOString();
+      }
+
       // Envia requisição para a planilha com action "update"
       const sheetsRes = await fetch(sheetsUrl, {
         method: 'POST',
