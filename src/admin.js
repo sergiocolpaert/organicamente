@@ -50,7 +50,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'view-dashboard': { title: 'Visão Geral', subtitle: 'Acompanhe os principais números e avisos do projeto' },
     'view-deliveries': { title: 'Entregas & Cestas', subtitle: 'Organize as cestas por produtor e dia de entrega' },
     'view-customers': { title: 'Clientes', subtitle: 'Gerencie a base de clientes, fichas e pagamentos' },
-    'view-churn': { title: 'Cancelamentos', subtitle: 'Analise os motivos das saídas e o saldo de inscritos' },
+    'view-reports': { title: 'Relatórios Executivos', subtitle: 'Análise completa de desempenho, retenção e balanço da comunidade' },
+    'view-churn': { title: 'Relatórios Executivos', subtitle: 'Análise completa de desempenho, retenção e balanço da comunidade' },
     'view-settings': { title: 'Ajustes', subtitle: 'Configurações gerais e segurança do sistema' }
   };
 
@@ -78,8 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (pageSubtitle) pageSubtitle.textContent = viewTitles[viewId].subtitle;
     }
 
-    if (viewId === 'view-churn') {
-      renderChurnView();
+    if (viewId === 'view-reports' || viewId === 'view-churn') {
+      renderReportsView();
     } else if (viewId === 'view-deliveries') {
       renderDeliveriesView();
     }
@@ -548,70 +549,200 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
   }
 
-  function renderChurnView() {
-    const reasonsContainer = document.getElementById('churn-view-reasons-container');
-    const historyTbody = document.getElementById('churn-view-table-body');
+  function renderReportsView() {
+    const repMrr = document.getElementById('rep-mrr');
+    const repRetentionRate = document.getElementById('rep-retention-rate');
+    const repNetGrowth = document.getElementById('rep-net-growth');
+    const repTotalChurn = document.getElementById('rep-total-churn');
+    const reasonsContainer = document.getElementById('reports-churn-reasons-container');
+    const basketsContainer = document.getElementById('reports-baskets-container');
+    const historyTbody = document.getElementById('reports-history-table-body');
+
+    let totalMrr = 0;
+    let activeCount = 0;
+    let totalChurn = 0;
+    let entries30d = 0;
+    let churn30d = 0;
 
     const reasonsCount = {};
-    const inactiveList = [];
+    const basketsCount = {};
+
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const historyEvents = [];
 
     subscribers.forEach(sub => {
+      const isActive = sub.statusAssinatura === 'Ativo';
       const isInactive = sub.statusAssinatura === 'Inativo' || sub.statusAssinatura === 'Cancelado';
+
+      if (isActive) {
+        activeCount++;
+        const val = parseFloat(String(sub.totalMensal || '').replace(/[^\d,]/g, '').replace(',', '.'));
+        if (!isNaN(val)) totalMrr += val;
+
+        const cType = sub.cestaTipo || 'Cesta Não Informada';
+        basketsCount[cType] = (basketsCount[cType] || 0) + 1;
+      }
+
       if (isInactive) {
-        inactiveList.push(sub);
+        totalChurn++;
         const reason = sub.motivoCancelamento || 'Outros / Não especificado';
         reasonsCount[reason] = (reasonsCount[reason] || 0) + 1;
       }
+
+      // 30d entries
+      if (sub.dataHora) {
+        const regDate = new Date(sub.dataHora);
+        if (!isNaN(regDate.getTime())) {
+          if (regDate >= thirtyDaysAgo) entries30d++;
+          historyEvents.push({
+            name: sub.nome,
+            type: 'Novo Cadastro',
+            produtor: sub.produtor,
+            cesta: sub.cestaTipo,
+            date: regDate,
+            details: 'Entrada na Comunidade'
+          });
+        }
+      }
+
+      // 30d churn
+      if (isInactive) {
+        let churnDate = sub.dataStatusAlterado ? new Date(sub.dataStatusAlterado) : (sub.dataHora ? new Date(sub.dataHora) : null);
+        if (churnDate && !isNaN(churnDate.getTime()) && churnDate >= thirtyDaysAgo) {
+          churn30d++;
+        }
+        historyEvents.push({
+          name: sub.nome,
+          type: 'Cancelamento',
+          produtor: sub.produtor,
+          cesta: sub.cestaTipo,
+          date: churnDate || new Date(),
+          details: sub.motivoCancelamento ? `${sub.motivoCancelamento}${sub.motivoDetalhe ? ' (' + sub.motivoDetalhe + ')' : ''}` : 'Não informado'
+        });
+      }
     });
 
+    if (repMrr) repMrr.textContent = formatMoney(totalMrr);
+    const baseTotal = activeCount + churn30d;
+    const churnRate = baseTotal > 0 ? ((churn30d / baseTotal) * 100).toFixed(1) : '0.0';
+    const retentionRate = (100 - parseFloat(churnRate)).toFixed(1);
+
+    if (repRetentionRate) repRetentionRate.textContent = `${retentionRate}%`;
+    const netGrowth = entries30d - churn30d;
+    if (repNetGrowth) {
+      repNetGrowth.textContent = netGrowth >= 0 ? `+${netGrowth}` : `${netGrowth}`;
+      repNetGrowth.style.color = netGrowth >= 0 ? 'var(--color-primary-light)' : 'var(--color-danger)';
+    }
+    if (repTotalChurn) repTotalChurn.textContent = totalChurn;
+
+    // Render Churn Reasons
     if (reasonsContainer) {
       reasonsContainer.innerHTML = '';
-      const total = Object.values(reasonsCount).reduce((a, b) => a + b, 0);
-
-      if (total === 0) {
-        reasonsContainer.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center;">Nenhum cancelamento ou inativação registrada com motivo.</p>';
+      const totalReasons = Object.values(reasonsCount).reduce((a, b) => a + b, 0);
+      if (totalReasons === 0) {
+        reasonsContainer.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center;">Nenhum cancelamento registrado com motivo.</p>';
       } else {
-        Object.entries(reasonsCount)
-          .sort((a, b) => b[1] - a[1])
-          .forEach(([reason, count]) => {
-            const pct = Math.round((count / total) * 100);
-            const barItem = document.createElement('div');
-            barItem.className = 'bar-item';
-            barItem.innerHTML = `
-              <div class="bar-label" style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
-                <span><strong>${reason}</strong></span>
-                <span style="color: var(--color-danger); font-weight: 600;">${count} (${pct}%)</span>
-              </div>
-              <div class="bar-track" style="height: 10px; background: #fee2e2; border-radius: 6px; overflow: hidden;">
-                <div class="bar-fill color-danger" style="width: ${pct}%; height: 100%; background: var(--color-danger); border-radius: 6px; transition: width 0.4s ease;"></div>
-              </div>
-            `;
-            reasonsContainer.appendChild(barItem);
-          });
-      }
-    }
-
-    if (historyTbody) {
-      historyTbody.innerHTML = '';
-
-      if (inactiveList.length === 0) {
-        historyTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--color-text-secondary); padding: 16px;">Nenhum cliente inativo ou cancelado no registro.</td></tr>';
-      } else {
-        inactiveList.forEach(sub => {
-          const row = document.createElement('tr');
-          const dateStr = sub.dataStatusAlterado ? new Date(sub.dataStatusAlterado).toLocaleDateString('pt-BR') : (sub.dataHora ? new Date(sub.dataHora).toLocaleDateString('pt-BR') : '-');
-          const reasonStr = sub.motivoCancelamento ? `${sub.motivoCancelamento}${sub.motivoDetalhe ? ' (' + sub.motivoDetalhe + ')' : ''}` : 'Não informado';
-
-          row.innerHTML = `
-            <td><strong>${sub.nome}</strong><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.email}</span></td>
-            <td>${sub.produtor}<br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.cestaTipo}</span></td>
-            <td>${dateStr}</td>
-            <td><span class="badge atrasada" style="font-size: 10px;">${sub.statusAssinatura}</span><br><span style="font-size: 11px; color: var(--color-text-secondary);">${reasonStr}</span></td>
+        Object.entries(reasonsCount).sort((a, b) => b[1] - a[1]).forEach(([reason, count]) => {
+          const pct = Math.round((count / totalReasons) * 100);
+          const div = document.createElement('div');
+          div.className = 'bar-item';
+          div.innerHTML = `
+            <div class="bar-label" style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+              <span><strong>${reason}</strong></span>
+              <span style="color: var(--color-danger); font-weight: 600;">${count} (${pct}%)</span>
+            </div>
+            <div class="bar-track" style="height: 10px; background: #fee2e2; border-radius: 6px; overflow: hidden;">
+              <div class="bar-fill color-danger" style="width: ${pct}%; height: 100%; background: var(--color-danger); border-radius: 6px;"></div>
+            </div>
           `;
-          historyTbody.appendChild(row);
+          reasonsContainer.appendChild(div);
         });
       }
     }
+
+    // Render Baskets Distribution
+    if (basketsContainer) {
+      basketsContainer.innerHTML = '';
+      if (activeCount === 0) {
+        basketsContainer.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center;">Nenhuma cesta ativa.</p>';
+      } else {
+        Object.entries(basketsCount).sort((a, b) => b[1] - a[1]).forEach(([basket, count]) => {
+          const pct = Math.round((count / activeCount) * 100);
+          const div = document.createElement('div');
+          div.className = 'bar-item';
+          div.innerHTML = `
+            <div class="bar-label" style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+              <span><strong>${basket}</strong></span>
+              <span style="color: var(--color-primary-light); font-weight: 600;">${count} (${pct}%)</span>
+            </div>
+            <div class="bar-track" style="height: 10px; background: #e2e8f0; border-radius: 6px; overflow: hidden;">
+              <div class="bar-fill color-bruno" style="width: ${pct}%; height: 100%; background: var(--color-secondary); border-radius: 6px;"></div>
+            </div>
+          `;
+          basketsContainer.appendChild(div);
+        });
+      }
+    }
+
+    // Render History table
+    if (historyTbody) {
+      historyTbody.innerHTML = '';
+      historyEvents.sort((a, b) => b.date - a.date);
+
+      if (historyEvents.length === 0) {
+        historyTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--color-text-secondary); padding: 16px;">Nenhum evento registrado.</td></tr>';
+      } else {
+        historyEvents.slice(0, 25).forEach(evt => {
+          const tr = document.createElement('tr');
+          const isEntry = evt.type === 'Novo Cadastro';
+          const badgeClass = isEntry ? 'paga' : 'atrasada';
+          const dStr = evt.date ? evt.date.toLocaleDateString('pt-BR') : '-';
+
+          tr.innerHTML = `
+            <td><strong>${evt.name}</strong></td>
+            <td><span class="badge ${badgeClass}">${evt.type}</span></td>
+            <td>${evt.produtor || '-'}<br><span style="font-size: 11px; color: var(--color-text-secondary);">${evt.cesta || '-'}</span></td>
+            <td>${dStr}</td>
+            <td><span style="font-size: 12px; color: var(--color-text-secondary);">${evt.details}</span></td>
+          `;
+          historyTbody.appendChild(tr);
+        });
+      }
+    }
+  }
+
+  // Exportar Relatório Executivo (Download CSV)
+  const btnExportReport = document.getElementById('btn-export-report');
+  if (btnExportReport) {
+    btnExportReport.addEventListener('click', () => {
+      let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+      csvContent += "Nome;CPF;E-mail;Telefone;Produtor;Cesta;Dia Entrega;Total Mensal;Status;Motivo Cancelamento\n";
+
+      subscribers.forEach(sub => {
+        const rowStr = [
+          `"${(sub.nome || '').replace(/"/g, '""')}"`,
+          `"${(sub.cpf || '').replace(/"/g, '""')}"`,
+          `"${(sub.email || '').replace(/"/g, '""')}"`,
+          `"${(sub.telefone || '').replace(/"/g, '""')}"`,
+          `"${(sub.produtor || '').replace(/"/g, '""')}"`,
+          `"${(sub.cestaTipo || '').replace(/"/g, '""')}"`,
+          `"${(sub.diaEntrega || '').replace(/"/g, '""')}"`,
+          `"${(sub.totalMensal || '').replace(/"/g, '""')}"`,
+          `"${(sub.statusAssinatura || '').replace(/"/g, '""')}"`,
+          `"${(sub.motivoCancelamento || '').replace(/"/g, '""')}"`
+        ].join(";");
+        csvContent += rowStr + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Relatorio_Executivo_Organicamente_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
   }
 
   function applyFilters() {
@@ -1239,11 +1370,109 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ==========================================================================
-  // 6. LÓGICA DE CADASTRO (CRIAR)
+  // 6. LÓGICA DE CADASTRO (WIZARD POR ETAPAS)
   // ==========================================================================
   
+  let currentWizardStep = 1;
+  const btnWizardPrev = document.getElementById('btn-wizard-prev');
+  const btnWizardNext = document.getElementById('btn-wizard-next');
+  const btnWizardSubmit = document.getElementById('btn-new-submit');
+
+  function updateWizardUI() {
+    for (let i = 1; i <= 3; i++) {
+      const stepEl = document.getElementById(`wizard-step-${i}`);
+      const indicatorEl = document.getElementById(`step-indicator-${i}`);
+      const lineEl = document.getElementById(`step-line-${i}`);
+
+      if (stepEl) {
+        if (i === currentWizardStep) {
+          stepEl.classList.remove('hidden');
+        } else {
+          stepEl.classList.add('hidden');
+        }
+      }
+
+      if (indicatorEl) {
+        if (i === currentWizardStep) {
+          indicatorEl.className = 'step-indicator active';
+        } else if (i < currentWizardStep) {
+          indicatorEl.className = 'step-indicator completed';
+        } else {
+          indicatorEl.className = 'step-indicator';
+        }
+      }
+
+      if (lineEl) {
+        if (i < currentWizardStep) {
+          lineEl.classList.add('active');
+        } else {
+          lineEl.classList.remove('active');
+        }
+      }
+    }
+
+    if (btnWizardPrev) btnWizardPrev.disabled = (currentWizardStep === 1);
+
+    if (currentWizardStep === 3) {
+      if (btnWizardNext) btnWizardNext.classList.add('hidden');
+      if (btnWizardSubmit) btnWizardSubmit.classList.remove('hidden');
+    } else {
+      if (btnWizardNext) btnWizardNext.classList.remove('hidden');
+      if (btnWizardSubmit) btnWizardSubmit.classList.add('hidden');
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function validateWizardStep(step) {
+    if (step === 1) {
+      const nome = document.getElementById('new-nome').value.trim();
+      const cpf = document.getElementById('new-cpf').value.trim();
+      const email = document.getElementById('new-email').value.trim();
+      const telefone = document.getElementById('new-telefone').value.trim();
+
+      if (!nome || !cpf || !email || !telefone) {
+        alert('Por favor, preencha todos os campos obrigatórios da Etapa 1 (Nome, CPF, E-mail e WhatsApp).');
+        return false;
+      }
+    } else if (step === 2) {
+      const endereco = document.getElementById('new-endereco').value.trim();
+      const cep = document.getElementById('new-cep').value.trim();
+      const bairro = document.getElementById('new-bairro').value.trim();
+      const regiao = document.getElementById('new-regiao').value.trim();
+
+      if (!endereco || !cep || !bairro || !regiao) {
+        alert('Por favor, preencha os campos obrigatórios de endereço (Endereço, CEP, Bairro e Região).');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (btnWizardNext) {
+    btnWizardNext.addEventListener('click', () => {
+      if (validateWizardStep(currentWizardStep)) {
+        if (currentWizardStep < 3) {
+          currentWizardStep++;
+          updateWizardUI();
+        }
+      }
+    });
+  }
+
+  if (btnWizardPrev) {
+    btnWizardPrev.addEventListener('click', () => {
+      if (currentWizardStep > 1) {
+        currentWizardStep--;
+        updateWizardUI();
+      }
+    });
+  }
+
   if (btnNewSubscriber) {
     btnNewSubscriber.addEventListener('click', () => {
+      currentWizardStep = 1;
+      updateWizardUI();
       newSubscriberForm.reset();
       newSubscriberModal.classList.add('active');
       if (window.lucide) window.lucide.createIcons();

@@ -112,6 +112,11 @@
           <span>Clientes</span>
         </button>
 
+        <button class="nav-item" data-view="view-reports">
+          <i data-lucide="bar-chart-3"></i>
+          <span>Relatórios</span>
+        </button>
+
         <button class="nav-item" data-view="view-churn">
           <i data-lucide="trending-down"></i>
           <span>Cancelamentos</span>
@@ -337,7 +342,99 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- TELA 4: CANCELAMENTOS & SAÍDAS             -->
+        <!-- TELA 4: RELATÓRIOS & DESEMPENHO (REPORTS)  -->
+        <!-- ========================================== -->
+        <section id="view-reports" class="app-view hidden">
+          <div class="table-toolbar" style="margin-bottom: 20px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--color-primary);"><i data-lucide="file-text"></i> Relatório de Desempenho da Comunidade</h3>
+            <button id="btn-export-report" class="btn-primary" style="margin-left: auto;">
+              <i data-lucide="download"></i>
+              <span>Baixar Relatório Executivo</span>
+            </button>
+          </div>
+
+          <!-- Cards Sintéticos do Relatório -->
+          <div class="kpi-grid" style="margin-bottom: 24px;">
+            <div class="kpi-card">
+              <div class="kpi-icon color-1"><i data-lucide="dollar-sign"></i></div>
+              <div class="kpi-data">
+                <h3>Faturamento Recorrente (MRR)</h3>
+                <div class="kpi-value" id="rep-mrr">R$ 0,00</div>
+                <p class="kpi-sub">Total de mensalidades ativas</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon color-2"><i data-lucide="user-check"></i></div>
+              <div class="kpi-data">
+                <h3>Taxa de Retenção</h3>
+                <div class="kpi-value" id="rep-retention-rate">0%</div>
+                <p class="kpi-sub">Assinantes retidos no período</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon color-1"><i data-lucide="trending-up"></i></div>
+              <div class="kpi-data">
+                <h3>Balanço de Crescimento (30d)</h3>
+                <div class="kpi-value" id="rep-net-growth">+0</div>
+                <p class="kpi-sub">Novas Entradas vs Saídas</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon color-danger"><i data-lucide="trending-down"></i></div>
+              <div class="kpi-data">
+                <h3>Total de Cancelamentos</h3>
+                <div class="kpi-value text-danger" id="rep-total-churn">0</div>
+                <p class="kpi-sub">Inativações registradas</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gráficos Visuais de Relatório -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+            <div class="form-section-column">
+              <h3><i data-lucide="pie-chart"></i> Motivos Principais de Saída (Churn)</h3>
+              <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 16px;">Distribuição percentual dos motivos alegados na inativação:</p>
+              <div id="reports-churn-reasons-container" class="distribution-bars" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Renderizado via JS -->
+              </div>
+            </div>
+
+            <div class="form-section-column">
+              <h3><i data-lucide="shopping-bag"></i> Distribuição por Cesta & Produtor</h3>
+              <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 16px;">Quantidade de cestas ativas alocadas por parceiro:</p>
+              <div id="reports-baskets-container" class="distribution-bars" style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- Renderizado via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabela do Histórico de Movimentações -->
+          <div class="form-section-column">
+            <h3><i data-lucide="clock"></i> Histórico Recente de Entradas e Saídas</h3>
+            <div class="table-container" style="max-height: 350px; overflow-y: auto; margin-top: 12px;">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>Assinante</th>
+                    <th>Tipo de Evento</th>
+                    <th>Produtor / Cesta</th>
+                    <th>Data</th>
+                    <th>Detalhes / Motivo</th>
+                  </tr>
+                </thead>
+                <tbody id="reports-history-table-body">
+                  <!-- Renderizado via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TELA 4 (ANTIGA): CANCELAMENTOS             -->
         <!-- ========================================== -->
         <section id="view-churn" class="app-view hidden">
           <div class="form-section-column">
@@ -418,11 +515,10 @@
         <button class="modal-tab-btn" data-tab="tab-finance">Histórico Financeiro</button>
       </div>
 
-      <!-- Conteúdo do Modal (Visualização Estática) -->
-      <!-- Aba 1: Ficha do Assinante -->
+      <!-- Conteúdo do Modal (Visualização) -->
       <div class="modal-body active-tab" id="tab-details">
         <div class="modal-section-grid">
-          <!-- Dados Pessoais -->
+          <!-- Coluna 1: Dados Pessoais -->
           <div class="modal-section">
             <h3><i data-lucide="user"></i> Dados Pessoais</h3>
             <div class="details-list">
@@ -435,17 +531,22 @@
                 <span class="value" id="m-email">-</span>
               </div>
               <div class="detail-item">
-                <span class="label">Telefone</span>
-                <span class="value" id="m-telefone">-</span>
+                <span class="label">WhatsApp</span>
+                <div class="whatsapp-cell">
+                  <span class="value" id="m-telefone">-</span>
+                  <a href="#" target="_blank" class="btn-whatsapp-icon" id="modal-btn-whatsapp" title="Abrir conversa no WhatsApp">
+                    <i data-lucide="message-circle"></i>
+                  </a>
+                </div>
               </div>
               <div class="detail-item">
-                <span class="label">Inscrito em</span>
+                <span class="label">Data de Cadastro</span>
                 <span class="value" id="m-datahora">-</span>
               </div>
             </div>
           </div>
 
-          <!-- Assinatura -->
+          <!-- Coluna 2: Detalhes da Cesta -->
           <div class="modal-section">
             <h3><i data-lucide="shopping-bag"></i> Detalhes da Cesta</h3>
             <div class="details-list">
@@ -601,9 +702,8 @@
         </div>
       </div>
 
-      <!-- Conteúdo do Modal (Edição de Dados) -->
-      <form id="edit-subscriber-form" class="modal-body-edit hidden">
-        <!-- Guardamos o CPF antigo para indexação caso seja alterado -->
+      <!-- FORMULÁRIO DE EDIÇÃO OCULTO POR PADRÃO -->
+      <form id="edit-subscriber-form" class="modal-body-form hidden" style="padding: 24px;">
         <input type="hidden" id="edit-original-cpf">
         <input type="hidden" id="edit-original-datahora">
 
@@ -618,7 +718,7 @@
               </div>
               <div class="form-group flex-1">
                 <label for="edit-cpf">CPF</label>
-                <input type="text" id="edit-cpf" required readonly class="input-readonly" title="CPF não pode ser editado pois é chave do registro.">
+                <input type="text" id="edit-cpf" required>
               </div>
             </div>
 
@@ -633,7 +733,7 @@
               </div>
             </div>
 
-            <h3 style="margin-top: 16px;"><i data-lucide="shopping-bag"></i> Assinatura</h3>
+            <h3 style="margin-top: 16px;"><i data-lucide="shopping-bag"></i> Detalhes da Cesta</h3>
 
             <div class="form-group-row">
               <div class="form-group flex-1">
@@ -798,10 +898,6 @@
             <i data-lucide="edit-3"></i>
             <span>Editar Dados</span>
           </button>
-          <a href="#" target="_blank" class="btn-whatsapp" id="modal-btn-whatsapp">
-            <i data-lucide="message-circle"></i>
-            <span>Conversar no WhatsApp</span>
-          </a>
         </div>
       </div>
 
@@ -821,194 +917,220 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- 4. MODAL: CADASTRAR NOVO ASSINANTE        -->
+  <!-- 4. MODAL: CADASTRAR NOVO ASSINANTE (WIZARD ETAPAS) -->
   <!-- ========================================== -->
   <div id="new-subscriber-modal" class="modal-backdrop">
-    <div class="modal-panel max-width-large">
-      <div class="modal-header">
+    <div class="modal-panel" style="max-width: 680px;">
+      <div class="modal-header" style="padding-bottom: 12px;">
         <div class="modal-title-area">
-          <h2>Cadastrar Novo Assinante</h2>
-          <p style="font-size: 13px; color: var(--color-text-secondary);">Insira os dados cadastrais e logísticos da nova assinatura</p>
+          <h2>Novo Assinante</h2>
+          <p style="font-size: 13px; color: var(--color-text-secondary);">Cadastre a assinatura em 3 etapas simples</p>
         </div>
         <button id="btn-close-new-modal" class="btn-close-modal">
           <i data-lucide="x"></i>
         </button>
       </div>
 
-      <form id="new-subscriber-form" class="modal-body-form">
-        <div class="form-grid-layout">
-          <!-- Coluna 1: Pessoal e Assinatura -->
-          <div class="form-section-column">
-            <h3><i data-lucide="user"></i> Dados Pessoais</h3>
-            
-            <div class="form-group-row">
-              <div class="form-group flex-2">
-                <label for="new-nome">Nome Completo</label>
-                <input type="text" id="new-nome" required placeholder="Nome do assinante">
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-cpf">CPF</label>
-                <input type="text" id="new-cpf" required placeholder="000.000.000-00">
-              </div>
+      <!-- Barra de Progresso por Etapas (Stepper) -->
+      <div class="stepper-bar">
+        <div class="step-indicator active" id="step-indicator-1">
+          <div class="step-circle">1</div>
+          <span class="step-label">Dados Pessoais</span>
+        </div>
+        <div class="step-line" id="step-line-1"></div>
+        <div class="step-indicator" id="step-indicator-2">
+          <div class="step-circle">2</div>
+          <span class="step-label">Endereço & Entrega</span>
+        </div>
+        <div class="step-line" id="step-line-2"></div>
+        <div class="step-indicator" id="step-indicator-3">
+          <div class="step-circle">3</div>
+          <span class="step-label">Plano & Cobrança</span>
+        </div>
+      </div>
+
+      <form id="new-subscriber-form" class="modal-body-form" style="padding: 20px 24px;">
+        
+        <!-- ETAPA 1: DADOS PESSOAIS -->
+        <div class="wizard-step" id="wizard-step-1">
+          <h3 style="margin-bottom: 16px;"><i data-lucide="user"></i> Etapa 1: Dados do Cliente</h3>
+          
+          <div class="form-group-row">
+            <div class="form-group flex-2">
+              <label for="new-nome">Nome Completo *</label>
+              <input type="text" id="new-nome" required placeholder="Ex: Maria da Silva">
             </div>
-
-            <div class="form-group-row">
-              <div class="form-group flex-1">
-                <label for="new-email">E-mail</label>
-                <input type="email" id="new-email" required placeholder="exemplo@email.com">
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-telefone">WhatsApp</label>
-                <input type="text" id="new-telefone" required placeholder="(00) 00000-0000">
-              </div>
-            </div>
-
-            <h3 style="margin-top: 16px;"><i data-lucide="shopping-bag"></i> Detalhes da Cesta</h3>
-
-            <div class="form-group-row">
-              <div class="form-group flex-1">
-                <label for="new-produtor">Agricultor Parceiro</label>
-                <select id="new-produtor" required>
-                  <option value="" disabled selected>Selecione o agricultor</option>
-                  <option value="Bruno e Família">Bruno e Família</option>
-                  <option value="Russo e Família">Russo e Família</option>
-                </select>
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-diaentrega">Dia de Entrega</label>
-                <select id="new-diaentrega" required>
-                  <option value="" disabled selected>Selecione o dia</option>
-                  <option value="Terça-feira">Terça-feira</option>
-                  <option value="Quarta-feira">Quarta-feira</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group-row">
-              <div class="form-group flex-1">
-                <label for="new-cestaTipo">Tipo de Cesta</label>
-                <select id="new-cestaTipo" required>
-                  <option value="" disabled selected>Selecione a cesta</option>
-                  <option value="Cesta Família">Cesta Família</option>
-                  <option value="Cesta Individual">Cesta Individual</option>
-                  <option value="Cesta Quinzenal">Cesta Quinzenal</option>
-                  <option value="Entrega Avulsa (Unitária)">Entrega Avulsa (Unitária)</option>
-                </select>
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-cestaValor">Valor da Cesta</label>
-                <input type="text" id="new-cestaValor" required placeholder="R$ 0,00">
-              </div>
-            </div>
-
-            <div class="form-group-row">
-              <div class="form-group flex-1">
-                <label for="new-ovosTipo">Opcional de Ovos</label>
-                <select id="new-ovosTipo" required>
-                  <option value="Sem Ovos">Sem Ovos</option>
-                  <option value="Com Ovos Caipiras (1 dúzia)">Com Ovos Caipiras (1 dúzia)</option>
-                  <option value="Com Ovos Caipiras (2 dúzias)">Com Ovos Caipiras (2 dúzias)</option>
-                  <option value="Com Ovos Caipiras (3 dúzias)">Com Ovos Caipiras (3 dúzias)</option>
-                </select>
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-ovosValor">Valor dos Ovos</label>
-                <input type="text" id="new-ovosValor" required placeholder="R$ 0,00" value="R$ 0,00">
-              </div>
-            </div>
-
-            <div class="form-group-row">
-              <div class="form-group flex-1">
-                <label for="new-totalmensal">Total Mensal</label>
-                <input type="text" id="new-totalmensal" required placeholder="R$ 0,00">
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-primeiropagamento">Primeiro Pagamento</label>
-                <input type="text" id="new-primeiropagamento" required placeholder="R$ 0,00">
-              </div>
+            <div class="form-group flex-1">
+              <label for="new-cpf">CPF *</label>
+              <input type="text" id="new-cpf" required placeholder="000.000.000-00">
             </div>
           </div>
 
-          <!-- Coluna 2: Endereço e Logística -->
-          <div class="form-section-column">
-            <h3><i data-lucide="map-pin"></i> Logística & Endereço</h3>
-            
-            <div class="form-group-row">
-              <div class="form-group flex-2">
-                <label for="new-endereco">Endereço Completo</label>
-                <input type="text" id="new-endereco" required placeholder="Rua, número, apt/bloco">
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-cep">CEP</label>
-                <input type="text" id="new-cep" required placeholder="00000-000">
-              </div>
+          <div class="form-group-row" style="margin-top: 12px;">
+            <div class="form-group flex-1">
+              <label for="new-email">E-mail *</label>
+              <input type="email" id="new-email" required placeholder="exemplo@email.com">
             </div>
-
-            <div class="form-group-row">
-              <div class="form-group flex-1">
-                <label for="new-bairro">Bairro</label>
-                <input type="text" id="new-bairro" required placeholder="Ex: Botafogo">
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-regiao">Região</label>
-                <input type="text" id="new-regiao" required placeholder="Ex: Zona Sul">
-              </div>
+            <div class="form-group flex-1">
+              <label for="new-telefone">WhatsApp *</label>
+              <input type="text" id="new-telefone" required placeholder="(00) 00000-0000">
             </div>
+          </div>
 
-            <div class="form-group">
-              <label for="new-referencia">Ponto de Referência</label>
-              <input type="text" id="new-referencia" placeholder="Ex: Próximo ao metrô">
+          <div class="form-group" style="margin-top: 12px;">
+            <label for="new-comoConheceu">Como Conheceu a Organicamente?</label>
+            <input type="text" id="new-comoConheceu" placeholder="Ex: Instagram, Indicação de Amigo, Evento">
+          </div>
+        </div>
+
+        <!-- ETAPA 2: LOGÍSTICA & ENDEREÇO -->
+        <div class="wizard-step hidden" id="wizard-step-2">
+          <h3 style="margin-bottom: 16px;"><i data-lucide="map-pin"></i> Etapa 2: Endereço para Entrega</h3>
+          
+          <div class="form-group-row">
+            <div class="form-group flex-2">
+              <label for="new-endereco">Endereço Completo *</label>
+              <input type="text" id="new-endereco" required placeholder="Rua, número, apartamento/bloco">
             </div>
-
-            <div class="form-group-row">
-              <div class="form-group flex-1">
-                <label for="new-vizinho">Vizinho (Onde deixar se não houver ninguém)</label>
-                <input type="text" id="new-vizinho" placeholder="Ex: Portaria ou vizinho do 102">
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-horario">Janela de Horário</label>
-                <input type="text" id="new-horario" placeholder="Ex: Comercial" value="Horário Comercial">
-              </div>
+            <div class="form-group flex-1">
+              <label for="new-cep">CEP *</label>
+              <input type="text" id="new-cep" required placeholder="00000-000">
             </div>
+          </div>
 
-            <div class="form-group-row">
-              <div class="form-group flex-1">
-                <label for="new-comoConheceu">Como Conheceu</label>
-                <input type="text" id="new-comoConheceu" placeholder="Ex: Instagram, Indicação">
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-forma-pagamento">Forma de Pagamento (Asaas)</label>
-                <select id="new-forma-pagamento">
-                  <option value="PIX">PIX</option>
-                  <option value="BOLETO">BOLETO</option>
-                </select>
-              </div>
-              <div class="form-group flex-1">
-                <label for="new-statusAssinatura">Status da Assinatura</label>
-                <select id="new-statusAssinatura" required>
-                  <option value="Pendente" selected>Pendente</option>
-                  <option value="Ativo">Ativo</option>
-                  <option value="Inativo">Inativo</option>
-                  <option value="Cancelado">Cancelado</option>
-                </select>
-              </div>
+          <div class="form-group-row" style="margin-top: 12px;">
+            <div class="form-group flex-1">
+              <label for="new-bairro">Bairro *</label>
+              <input type="text" id="new-bairro" required placeholder="Ex: Botafogo">
             </div>
+            <div class="form-group flex-1">
+              <label for="new-regiao">Região *</label>
+              <input type="text" id="new-regiao" required placeholder="Ex: Zona Sul">
+            </div>
+          </div>
 
-            <div class="form-group">
-              <label for="new-observacoes">Observações do Cadastro</label>
-              <textarea id="new-observacoes" rows="3" placeholder="Ex: Proporcional cobrado em separado, etc."></textarea>
+          <div class="form-group" style="margin-top: 12px;">
+            <label for="new-referencia">Ponto de Referência</label>
+            <input type="text" id="new-referencia" placeholder="Ex: Próximo ao Metrô / Em frente ao mercado">
+          </div>
+
+          <div class="form-group-row" style="margin-top: 12px;">
+            <div class="form-group flex-1">
+              <label for="new-vizinho">Vizinho (Instruções de entrega)</label>
+              <input type="text" id="new-vizinho" placeholder="Ex: Portaria 24h / Deixar com vizinho do 102">
+            </div>
+            <div class="form-group flex-1">
+              <label for="new-horario">Janela de Horário Preferencial</label>
+              <input type="text" id="new-horario" placeholder="Ex: Comercial" value="Horário Comercial">
             </div>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <div class="footer-right-actions" style="margin-left: auto;">
-            <button class="btn-outline" type="button" id="btn-new-cancel">
-              <span>Cancelar</span>
+        <!-- ETAPA 3: PLANO & COBRANÇA -->
+        <div class="wizard-step hidden" id="wizard-step-3">
+          <h3 style="margin-bottom: 16px;"><i data-lucide="shopping-bag"></i> Etapa 3: Plano & Cobrança Asaas</h3>
+          
+          <div class="form-group-row">
+            <div class="form-group flex-1">
+              <label for="new-produtor">Agricultor Parceiro *</label>
+              <select id="new-produtor" required>
+                <option value="" disabled selected>Selecione o agricultor...</option>
+                <option value="Bruno e Família">Bruno e Família</option>
+                <option value="Russo e Família">Russo e Família</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="new-diaentrega">Dia de Entrega *</label>
+              <select id="new-diaentrega" required>
+                <option value="" disabled selected>Selecione o dia...</option>
+                <option value="Terça-feira">Terça-feira</option>
+                <option value="Quarta-feira">Quarta-feira</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group-row" style="margin-top: 12px;">
+            <div class="form-group flex-1">
+              <label for="new-cestaTipo">Tipo de Cesta *</label>
+              <select id="new-cestaTipo" required>
+                <option value="" disabled selected>Selecione a cesta...</option>
+                <option value="Cesta Família">Cesta Família</option>
+                <option value="Cesta Individual">Cesta Individual</option>
+                <option value="Cesta Quinzenal">Cesta Quinzenal</option>
+                <option value="Entrega Avulsa (Unitária)">Entrega Avulsa (Unitária)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="new-cestaValor">Valor da Cesta *</label>
+              <input type="text" id="new-cestaValor" required placeholder="R$ 0,00">
+            </div>
+          </div>
+
+          <div class="form-group-row" style="margin-top: 12px;">
+            <div class="form-group flex-1">
+              <label for="new-ovosTipo">Opcional de Ovos *</label>
+              <select id="new-ovosTipo" required>
+                <option value="Sem Ovos">Sem Ovos</option>
+                <option value="Com Ovos Caipiras (1 dúzia)">Com Ovos Caipiras (1 dúzia)</option>
+                <option value="Com Ovos Caipiras (2 dúzias)">Com Ovos Caipiras (2 dúzias)</option>
+                <option value="Com Ovos Caipiras (3 dúzias)">Com Ovos Caipiras (3 dúzias)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="new-ovosValor">Valor dos Ovos *</label>
+              <input type="text" id="new-ovosValor" required placeholder="R$ 0,00" value="R$ 0,00">
+            </div>
+          </div>
+
+          <div class="form-group-row" style="margin-top: 12px;">
+            <div class="form-group flex-1">
+              <label for="new-totalmensal">Total Mensalidade *</label>
+              <input type="text" id="new-totalmensal" required placeholder="R$ 0,00">
+            </div>
+            <div class="form-group flex-1">
+              <label for="new-primeiropagamento">Primeiro Pagamento (Adesão) *</label>
+              <input type="text" id="new-primeiropagamento" required placeholder="R$ 0,00">
+            </div>
+          </div>
+
+          <div class="form-group-row" style="margin-top: 12px;">
+            <div class="form-group flex-1">
+              <label for="new-forma-pagamento">Cobrança Asaas *</label>
+              <select id="new-forma-pagamento">
+                <option value="PIX">PIX</option>
+                <option value="BOLETO">BOLETO</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="new-statusAssinatura">Status Inicial *</label>
+              <select id="new-statusAssinatura" required>
+                <option value="Pendente" selected>Pendente (Aguardando Pagamento)</option>
+                <option value="Ativo">Ativo (Confirmado)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 12px;">
+            <label for="new-observacoes">Observações Internas</label>
+            <textarea id="new-observacoes" rows="2" placeholder="Observações administrativas do novo cliente..."></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--color-border);">
+          <div class="footer-left-actions">
+            <button class="btn-outline" type="button" id="btn-wizard-prev" disabled>
+              <i data-lucide="arrow-left"></i>
+              <span>Voltar</span>
             </button>
-            <button class="btn-primary" type="submit" id="btn-new-submit">
+          </div>
+          <div class="footer-right-actions" style="margin-left: auto;">
+            <button class="btn-primary" type="button" id="btn-wizard-next">
+              <span>Próximo Passo</span>
+              <i data-lucide="arrow-right"></i>
+            </button>
+            <button class="btn-primary hidden" type="submit" id="btn-new-submit">
               <i data-lucide="check-circle"></i>
-              <span>Concluir Cadastro</span>
+              <span>Finalizar Cadastro</span>
             </button>
           </div>
         </div>

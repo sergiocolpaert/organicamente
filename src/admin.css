@@ -2069,4 +2069,79 @@ tr:hover td {
   background-color: rgba(45, 106, 79, 0.06) !important;
 }
 
+/* ==========================================================================
+   BARRA DE ETAPAS (STEPPER WIZARD) NO MODAL DE NOVO CLIENTE
+   ========================================================================== */
+.stepper-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background-color: var(--color-accent);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.55;
+  transition: all var(--transition-fast);
+}
+
+.step-indicator.active {
+  opacity: 1;
+}
+
+.step-indicator.completed {
+  opacity: 0.9;
+}
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #cbd5e1;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.step-indicator.active .step-circle {
+  background-color: var(--color-primary-light);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(45, 106, 79, 0.3);
+}
+
+.step-indicator.completed .step-circle {
+  background-color: var(--color-secondary);
+  color: var(--color-primary);
+}
+
+.step-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background-color: #cbd5e1;
+  margin: 0 12px;
+  transition: background-color var(--transition-fast);
+}
+
+.step-line.active {
+  background-color: var(--color-secondary);
+}
+
+.wizard-step {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
 
