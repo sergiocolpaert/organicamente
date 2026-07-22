@@ -1882,6 +1882,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function setupReactiveCalculations(formPrefix) {
+    const cestaSelect = document.getElementById(`${formPrefix}-cestaTipo`);
+    const cestaValorInput = document.getElementById(`${formPrefix}-cestaValor`);
+    const ovosSelect = document.getElementById(`${formPrefix}-ovosTipo`);
+    const ovosValorInput = document.getElementById(`${formPrefix}-ovosValor`);
+    const totalInput = document.getElementById(`${formPrefix}-totalmensal`);
+    const primeiroInput = document.getElementById(`${formPrefix}-primeiropagamento`);
+
+    if (!cestaSelect || !ovosSelect) return;
+
+    function calculate() {
+      const cestaVal = cestaSelect.value;
+      const ovosVal = ovosSelect.value;
+
+      let cestaPrice = pricesConfig.cesta[cestaVal] || 0;
+      if (cestaValorInput) cestaValorInput.value = formatMoneyPlain(cestaPrice);
+
+      let deliveries = 4;
+      if (cestaVal === 'Cesta Quinzenal') deliveries = 2;
+      else if (cestaVal === 'Entrega Avulsa (Unitária)') deliveries = 1;
+
+      let eggsPrice = 0;
+      if (ovosVal.includes('1 dúzia')) eggsPrice = 1 * deliveries * pricesConfig.eggCostPerDozen;
+      else if (ovosVal.includes('2 dúzias')) eggsPrice = 2 * deliveries * pricesConfig.eggCostPerDozen;
+      else if (ovosVal.includes('3 dúzias')) eggsPrice = 3 * deliveries * pricesConfig.eggCostPerDozen;
+      
+      if (ovosValorInput) ovosValorInput.value = formatMoneyPlain(eggsPrice);
+
+      const totalMensal = cestaVal === 'Entrega Avulsa (Unitária)' ? 0 : (cestaPrice + eggsPrice);
+      if (totalInput) totalInput.value = formatMoneyPlain(totalMensal);
+
+      const primeiroPagamento = cestaPrice + eggsPrice + pricesConfig.adesao;
+      if (primeiroInput) primeiroInput.value = formatMoneyPlain(primeiroPagamento);
+    }
+
+    cestaSelect.addEventListener('change', calculate);
+    ovosSelect.addEventListener('change', calculate);
+  }
+
   setupWizardCards();
   setupReactiveCalculations('edit');
 
