@@ -2219,4 +2219,57 @@ tr:hover td {
   to { opacity: 1; transform: translateX(0); }
 }
 
+/* ==========================================================================
+   BADGES CLICÁVEIS & NOVO MODELO DE STATUS DUPLO (ASSINATURA E FINANCEIRO)
+   ========================================================================== */
+.badge-clickable {
+  cursor: pointer !important;
+  user-select: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), opacity var(--transition-fast);
+}
+
+.badge-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  opacity: 0.9;
+}
+
+.badge-ativa {
+  background-color: #d8f3dc;
+  color: #1b4332;
+  border: 1px solid #b7e4c7;
+}
+
+.badge-pausada {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badge-cancelada {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.badge-em-dia {
+  background-color: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-isento {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.timeline-marker.color-purple {
+  background-color: #8b5cf6;
+}
+
+.timeline-marker.color-info {
+  background-color: #0284c7;
+}
+
 

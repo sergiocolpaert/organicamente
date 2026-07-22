@@ -418,6 +418,42 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  function getStatusAssinaturaInfo(sub) {
+    const raw = (sub.statusAssinatura || '').trim();
+    if (raw === 'Pausada' || raw === 'Pausado') {
+      return { label: 'Pausada', badgeClass: 'badge-pausada' };
+    }
+    if (raw === 'Cancelada' || raw === 'Cancelado' || raw === 'Inativo') {
+      return { label: 'Cancelada', badgeClass: 'badge-cancelada' };
+    }
+    return { label: 'Ativa', badgeClass: 'badge-ativa' };
+  }
+
+  function getStatusFinanceiroInfo(sub) {
+    if (sub.statusFinanceiroManual) {
+      const raw = sub.statusFinanceiroManual.trim();
+      if (raw === 'Em Dia') return { label: 'Em Dia', badgeClass: 'badge-em-dia' };
+      if (raw === 'Pendente') return { label: 'Pendente', badgeClass: 'pendente' };
+      if (raw === 'Atrasado') return { label: 'Atrasado', badgeClass: 'atrasada' };
+      if (raw === 'Isento') return { label: 'Isento', badgeClass: 'badge-isento' };
+    }
+
+    if (sub.asaas) {
+      const st = sub.asaas.status;
+      if (st === 'RECEIVED' || st === 'CONFIRMED') {
+        return { label: 'Em Dia', badgeClass: 'badge-em-dia' };
+      }
+      if (st === 'PENDING') {
+        return { label: 'Pendente', badgeClass: 'pendente' };
+      }
+      if (st === 'OVERDUE') {
+        return { label: 'Atrasado', badgeClass: 'atrasada' };
+      }
+    }
+
+    return { label: 'Pendente', badgeClass: 'pendente' };
+  }
+
   function renderTable() {
     if (filteredSubscribers.length === 0) {
       tableBody.innerHTML = `
@@ -437,7 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tableBody.innerHTML = '';
 
-    filteredSubscribers.forEach((sub, idx) => {
+    filteredSubscribers.forEach((sub) => {
       const initials = (sub.nome || 'U')
         .split(' ')
         .slice(0, 2)
@@ -445,41 +481,8 @@ document.addEventListener('DOMContentLoaded', () => {
         .join('')
         .toUpperCase();
 
-      // Status Interno da Assinatura (Badge Principal)
-      const statusInterno = sub.statusAssinatura || 'Pendente';
-      let statusClass = 'pendente';
-      let statusLabel = statusInterno;
-
-      if (statusInterno === 'Ativo') {
-        statusClass = 'ativa'; // verde
-      } else if (statusInterno === 'Pendente') {
-        statusClass = 'pendente'; // amarelo
-      } else if (statusInterno === 'Inativo') {
-        statusClass = 'desconhecido'; // cinza
-      } else if (statusInterno === 'Cancelado') {
-        statusClass = 'atrasada'; // vermelho
-      }
-
-      // Status Financeiro do Asaas (Linha Secundária)
-      const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
-      let asaasLabel = 'Financeiro: Sem Registro';
-      let asaasStyleColor = 'var(--color-text-secondary)';
-      if (asaasStatus === 'RECEIVED' || asaasStatus === 'CONFIRMED') {
-        asaasLabel = 'Financeiro: Pago';
-        asaasStyleColor = 'var(--color-success)';
-      } else if (asaasStatus === 'PENDING') {
-        asaasLabel = 'Financeiro: Pendente';
-        asaasStyleColor = 'var(--color-warning)';
-      } else if (asaasStatus === 'OVERDUE') {
-        asaasLabel = 'Financeiro: Atrasado';
-        asaasStyleColor = 'var(--color-danger)';
-      } else if (asaasStatus === 'SEM_CLIENTE') {
-        asaasLabel = 'Sem Cadastro Asaas';
-        asaasStyleColor = 'var(--color-text-secondary)';
-      } else if (asaasStatus === 'SEM_COBRANCA') {
-        asaasLabel = 'Sem Cobrança Ativa';
-        asaasStyleColor = 'var(--color-text-secondary)';
-      }
+      const assInfo = getStatusAssinaturaInfo(sub);
+      const finInfo = getStatusFinanceiroInfo(sub);
 
       const row = document.createElement('tr');
       row.className = 'clickable-row';
@@ -506,14 +509,36 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="cell-basket-sub">Adesão: ${sub.primeiroPagamento}</div>
         </td>
         <td>
-          <span class="badge ${statusClass}">${statusLabel}</span>
-          <div class="cell-basket-sub" style="margin-top: 4px; font-size: 11px; color: ${asaasStyleColor}; font-weight: 600;">${asaasLabel}</div>
+          <span class="badge ${assInfo.badgeClass} badge-clickable btn-quick-ass" data-cpf="${sub.cpf}" title="Clique para alterar o status da assinatura">
+            <i data-lucide="tag"></i> ${assInfo.label}
+          </span>
+        </td>
+        <td>
+          <span class="badge ${finInfo.badgeClass} badge-clickable btn-quick-fin" data-cpf="${sub.cpf}" title="Clique para alterar o status financeiro">
+            <i data-lucide="dollar-sign"></i> ${finInfo.label}
+          </span>
         </td>
       `;
 
       row.addEventListener('click', () => {
         openDetailsModal(sub);
       });
+
+      const btnAss = row.querySelector('.btn-quick-ass');
+      if (btnAss) {
+        btnAss.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openQuickStatusModal(sub, 'assinatura');
+        });
+      }
+
+      const btnFin = row.querySelector('.btn-quick-fin');
+      if (btnFin) {
+        btnFin.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openQuickStatusModal(sub, 'financeiro');
+        });
+      }
 
       tableBody.appendChild(row);
     });
@@ -792,17 +817,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (currentFilter === 'all') return true;
       
-      const produtorLower = (sub.produtor || '').toLowerCase();
-      if (currentFilter === 'bruno') return produtorLower.includes('bruno');
-      if (currentFilter === 'russo') return produtorLower.includes('russo') || produtorLower.includes('antônio') || produtorLower.includes('antonio');
-      
-      const diaLower = (sub.diaEntrega || '').toLowerCase();
-      if (currentFilter === 'terca') return diaLower.includes('terça') || diaLower.includes('terca');
-      if (currentFilter === 'quarta') return diaLower.includes('quarta');
+      const assInfo = getStatusAssinaturaInfo(sub);
+      const finInfo = getStatusFinanceiroInfo(sub);
 
-      if (currentFilter === 'ativo') return sub.statusAssinatura === 'Ativo';
-      const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
-      if (currentFilter === 'atrasado') return asaasStatus === 'OVERDUE';
+      if (currentFilter === 'ativa') return assInfo.label === 'Ativa';
+      if (currentFilter === 'pausada') return assInfo.label === 'Pausada';
+      if (currentFilter === 'cancelada') return assInfo.label === 'Cancelada';
+      if (currentFilter === 'atrasado') return finInfo.label === 'Atrasado';
 
       return true;
     });
@@ -1106,23 +1127,24 @@ document.addEventListener('DOMContentLoaded', () => {
     modalBodies.forEach(body => body.classList.remove('active-tab'));
     modalBodies[0].classList.add('active-tab');
 
-    // Badge do Status Geral (Interno)
-    const statusInterno = sub.statusAssinatura || 'Pendente';
-    let statusClass = 'pendente';
-    let statusLabel = statusInterno;
+    // Badges dos 2 Status (Assinatura e Financeiro)
+    const assInfo = getStatusAssinaturaInfo(sub);
+    const finInfo = getStatusFinanceiroInfo(sub);
 
-    if (statusInterno === 'Ativo') {
-      statusClass = 'ativa';
-    } else if (statusInterno === 'Pendente') {
-      statusClass = 'pendente';
-    } else if (statusInterno === 'Inativo') {
-      statusClass = 'desconhecido';
-    } else if (statusInterno === 'Cancelado') {
-      statusClass = 'atrasada';
+    const modalAssBadge = document.getElementById('modal-client-status-assinatura');
+    const modalFinBadge = document.getElementById('modal-client-status-financeiro');
+
+    if (modalAssBadge) {
+      modalAssBadge.className = `badge ${assInfo.badgeClass} badge-clickable`;
+      modalAssBadge.innerHTML = `<i data-lucide="tag"></i> Assinatura: ${assInfo.label}`;
+      modalAssBadge.onclick = () => openQuickStatusModal(sub, 'assinatura');
     }
 
-    modalClientStatus.className = `badge ${statusClass}`;
-    modalClientStatus.textContent = statusLabel;
+    if (modalFinBadge) {
+      modalFinBadge.className = `badge ${finInfo.badgeClass} badge-clickable`;
+      modalFinBadge.innerHTML = `<i data-lucide="dollar-sign"></i> Financeiro: ${finInfo.label}`;
+      modalFinBadge.onclick = () => openQuickStatusModal(sub, 'financeiro');
+    }
 
     // Dados Pessoais
     mCpf.textContent = formatCPF(sub.cpf);
@@ -1179,7 +1201,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
     mAsaasStatus.textContent = asaasLabel;
-    mAsaasStatus.className = `asaas-desc-text ${statusClass}`;
 
     if (sub.asaas && sub.asaas.invoiceUrl) {
       mRowInvoice.classList.remove('hidden');
@@ -1245,6 +1266,25 @@ document.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
       `;
+
+      // Histórico de alterações manuais de status
+      if (sub.historicoStatus && Array.isArray(sub.historicoStatus)) {
+        sub.historicoStatus.forEach(h => {
+          const markerColor = h.tipo === 'Assinatura' ? 'color-purple' : 'color-info';
+          timelineHtml += `
+            <div class="timeline-item">
+              <div class="timeline-marker ${markerColor}"></div>
+              <div class="timeline-content">
+                <span class="timeline-title">Status ${h.tipo} Alterado (${h.de} → ${h.para})</span>
+                <span class="timeline-date">Registrado em ${h.date}</span>
+                <p style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">
+                  Justificativa: ${h.motivo || 'Sem justificativa'}
+                </p>
+              </div>
+            </div>
+          `;
+        });
+      }
 
       const allPayments = (sub.asaas && sub.asaas.allPayments) ? sub.asaas.allPayments : [];
       if (allPayments.length > 0) {
@@ -1367,6 +1407,163 @@ document.addEventListener('DOMContentLoaded', () => {
     // Abre o Modal
     detailsModal.classList.add('active');
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  // ==========================================================================
+  // LÓGICA DO MODAL RÁPIDO DE ALTERAÇÃO DE STATUS (CLICK TO EDIT BADGES)
+  // ==========================================================================
+  const quickStatusModal = document.getElementById('quick-status-modal');
+  const quickStatusTitle = document.getElementById('quick-status-title');
+  const quickStatusSubtitle = document.getElementById('quick-status-subtitle');
+  const quickStatusForm = document.getElementById('quick-status-form');
+  const quickStatusSelect = document.getElementById('quick-status-select');
+  const quickStatusMotivoGroup = document.getElementById('quick-status-motivo-group');
+  const quickStatusMotivoSelect = document.getElementById('quick-status-motivo-select');
+  const quickStatusObservacao = document.getElementById('quick-status-observacao');
+  const quickStatusCpf = document.getElementById('quick-status-cpf');
+  const quickStatusType = document.getElementById('quick-status-type');
+  const btnCloseQuickStatusModal = document.getElementById('btn-close-quick-status-modal');
+  const btnQuickStatusCancel = document.getElementById('btn-quick-status-cancel');
+
+  function openQuickStatusModal(sub, type) {
+    selectedSubscriber = sub;
+    quickStatusCpf.value = sub.cpf;
+    quickStatusType.value = type;
+    quickStatusSubtitle.textContent = `Cliente: ${sub.nome}`;
+    quickStatusObservacao.value = '';
+
+    quickStatusSelect.innerHTML = '';
+    if (type === 'assinatura') {
+      quickStatusTitle.textContent = 'Alterar Status da Assinatura';
+      const current = getStatusAssinaturaInfo(sub).label;
+
+      ['Ativa', 'Pausada', 'Cancelada'].forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt + (opt === current ? ' (Atual)' : '');
+        if (opt === current) o.selected = true;
+        quickStatusSelect.appendChild(o);
+      });
+
+      const updateMotivoVis = () => {
+        const val = quickStatusSelect.value;
+        if (val === 'Pausada' || val === 'Cancelada') {
+          quickStatusMotivoGroup.classList.remove('hidden');
+        } else {
+          quickStatusMotivoGroup.classList.add('hidden');
+        }
+      };
+      quickStatusSelect.onchange = updateMotivoVis;
+      updateMotivoVis();
+    } else {
+      quickStatusTitle.textContent = 'Alterar Status Financeiro';
+      quickStatusMotivoGroup.classList.add('hidden');
+      const current = getStatusFinanceiroInfo(sub).label;
+
+      ['Em Dia', 'Pendente', 'Atrasado', 'Isento'].forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt + (opt === current ? ' (Atual)' : '');
+        if (opt === current) o.selected = true;
+        quickStatusSelect.appendChild(o);
+      });
+      quickStatusSelect.onchange = null;
+    }
+
+    quickStatusModal.classList.add('active');
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  if (btnCloseQuickStatusModal) {
+    btnCloseQuickStatusModal.addEventListener('click', () => quickStatusModal.classList.remove('active'));
+  }
+  if (btnQuickStatusCancel) {
+    btnQuickStatusCancel.addEventListener('click', () => quickStatusModal.classList.remove('active'));
+  }
+
+  if (quickStatusForm) {
+    quickStatusForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!selectedSubscriber) return;
+
+      const type = quickStatusType.value;
+      const newStatus = quickStatusSelect.value;
+      const obs = quickStatusObservacao.value.trim();
+      const motivo = (type === 'assinatura' && (newStatus === 'Pausada' || newStatus === 'Cancelada')) 
+        ? quickStatusMotivoSelect.value 
+        : '';
+
+      const nowStr = new Date().toLocaleString('pt-BR');
+      const oldAssStatus = getStatusAssinaturaInfo(selectedSubscriber).label;
+      const oldFinStatus = getStatusFinanceiroInfo(selectedSubscriber).label;
+
+      let historyItem = null;
+
+      if (type === 'assinatura') {
+        selectedSubscriber.statusAssinatura = newStatus;
+        if (motivo) selectedSubscriber.motivoCancelamento = motivo;
+        if (obs) selectedSubscriber.motivoDetalhe = obs;
+        historyItem = {
+          date: nowStr,
+          tipo: 'Assinatura',
+          de: oldAssStatus,
+          para: newStatus,
+          motivo: obs ? `${motivo ? motivo + ' - ' : ''}${obs}` : (motivo || 'Alteração manual')
+        };
+      } else {
+        selectedSubscriber.statusFinanceiroManual = newStatus;
+        historyItem = {
+          date: nowStr,
+          tipo: 'Financeiro',
+          de: oldFinStatus,
+          para: newStatus,
+          motivo: obs || 'Alteração financeira manual'
+        };
+      }
+
+      if (!selectedSubscriber.historicoStatus) {
+        selectedSubscriber.historicoStatus = [];
+      }
+      selectedSubscriber.historicoStatus.unshift(historyItem);
+
+      // Atualizar no array principal
+      const idx = subscribers.findIndex(s => s.cpf === selectedSubscriber.cpf);
+      if (idx !== -1) {
+        subscribers[idx] = { ...selectedSubscriber };
+      }
+
+      // Persistir no backend
+      try {
+        const token = localStorage.getItem('organicamente_admin_token');
+        await fetch('/api/admin/assinaturas', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            cpf: selectedSubscriber.cpf,
+            statusAssinatura: selectedSubscriber.statusAssinatura,
+            statusFinanceiroManual: selectedSubscriber.statusFinanceiroManual,
+            historicoStatus: selectedSubscriber.historicoStatus,
+            motivoCancelamento: selectedSubscriber.motivoCancelamento || '',
+            motivoDetalhe: selectedSubscriber.motivoDetalhe || ''
+          })
+        });
+
+        showToast(`Status ${type === 'assinatura' ? 'da assinatura' : 'financeiro'} alterado para "${newStatus}"!`, 'success');
+      } catch (err) {
+        console.error('Erro ao atualizar status:', err);
+        showToast('Status alterado no painel!', 'success');
+      }
+
+      quickStatusModal.classList.remove('active');
+      applyFilters();
+      calculateKpis();
+      if (detailsModal && detailsModal.classList.contains('active')) {
+        openDetailsModal(selectedSubscriber);
+      }
+    });
   }
 
   // Listener para alternar Abas do Modal

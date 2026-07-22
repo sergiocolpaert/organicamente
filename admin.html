@@ -312,8 +312,10 @@
             
             <div class="filter-tabs" id="filter-tabs-container">
               <button class="tab-btn active" data-filter="all">Todos</button>
-              <button class="tab-btn" data-filter="ativo">Ativos</button>
-              <button class="tab-btn" data-filter="atrasado">Atrasados</button>
+              <button class="tab-btn" data-filter="ativa">Assinaturas Ativas</button>
+              <button class="tab-btn" data-filter="pausada">Pausadas</button>
+              <button class="tab-btn" data-filter="cancelada">Canceladas</button>
+              <button class="tab-btn" data-filter="atrasado">Financeiro Atrasado</button>
             </div>
           </div>
 
@@ -325,12 +327,13 @@
                   <th>Cesta / Opcional</th>
                   <th>Produtor / Dia</th>
                   <th>Faturamento</th>
-                  <th>Status</th>
+                  <th>Status Assinatura</th>
+                  <th>Status Financeiro</th>
                 </tr>
               </thead>
               <tbody id="table-body">
                 <tr>
-                  <td colspan="5" class="table-loading">Carregando lista de clientes...</td>
+                  <td colspan="6" class="table-loading">Carregando lista de clientes...</td>
                 </tr>
               </tbody>
             </table>
@@ -501,7 +504,14 @@
       <div class="modal-header">
         <div class="modal-title-area">
           <h2 id="modal-client-name">Nome do Cliente</h2>
-          <span class="badge" id="modal-client-status">Ativo</span>
+          <div class="status-badges-group" style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+            <span class="badge badge-clickable" id="modal-client-status-assinatura" title="Clique para alterar o status da assinatura">
+              <i data-lucide="tag"></i> Assinatura: Ativa
+            </span>
+            <span class="badge badge-clickable" id="modal-client-status-financeiro" title="Clique para alterar a situação financeira">
+              <i data-lucide="dollar-sign"></i> Financeiro: Em Dia
+            </span>
+          </div>
         </div>
         <button id="btn-close-modal" class="btn-close-modal">
           <i data-lucide="x"></i>
@@ -840,7 +850,13 @@
             <div class="form-group-row">
               <div class="form-group flex-1">
                 <label for="edit-comoConheceu">Como Conheceu</label>
-                <input type="text" id="edit-comoConheceu">
+                <select id="edit-comoConheceu">
+                  <option value="Indicação de amigo/familiar">Indicação de amigo/familiar</option>
+                  <option value="Instagram / Redes Sociais">Instagram / Redes Sociais</option>
+                  <option value="Evento ou Feira local">Evento ou Feira local</option>
+                  <option value="Google ou Pesquisa Web">Google ou Pesquisa Web</option>
+                  <option value="Outros meios">Outros meios</option>
+                </select>
               </div>
               <div class="form-group flex-1">
                 <label for="edit-forma-pagamento">Forma de Pagamento</label>
@@ -850,12 +866,20 @@
                 </select>
               </div>
               <div class="form-group flex-1">
-                <label for="edit-statusAssinatura">Status da Assinatura</label>
+                <label for="edit-statusAssinatura">Status Assinatura *</label>
                 <select id="edit-statusAssinatura" required>
+                  <option value="Ativa">Ativa (Em entregas)</option>
+                  <option value="Pausada">Pausada (Férias/Pausa)</option>
+                  <option value="Cancelada">Cancelada (Inativo)</option>
+                </select>
+              </div>
+              <div class="form-group flex-1">
+                <label for="edit-statusFinanceiro">Status Financeiro *</label>
+                <select id="edit-statusFinanceiro" required>
+                  <option value="Em Dia">Em Dia</option>
                   <option value="Pendente">Pendente</option>
-                  <option value="Ativo">Ativo</option>
-                  <option value="Inativo">Inativo</option>
-                  <option value="Cancelado">Cancelado</option>
+                  <option value="Atrasado">Atrasado</option>
+                  <option value="Isento">Isento</option>
                 </select>
               </div>
             </div>
@@ -1328,6 +1352,61 @@
           <span>Fechar</span>
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 8. MODAL: ALTERAÇÃO RÁPIDA DE STATUS       -->
+  <!-- ========================================== -->
+  <div id="quick-status-modal" class="modal-backdrop">
+    <div class="modal-panel" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <h2 id="quick-status-title">Alterar Status</h2>
+          <p style="font-size: 13px; color: var(--color-text-secondary);" id="quick-status-subtitle">Cliente: -</p>
+        </div>
+        <button id="btn-close-quick-status-modal" class="btn-close-modal">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <form id="quick-status-form" class="modal-body-form" style="padding: 20px 24px;">
+        <input type="hidden" id="quick-status-cpf">
+        <input type="hidden" id="quick-status-type"> <!-- 'assinatura' ou 'financeiro' -->
+
+        <div class="form-group">
+          <label for="quick-status-select" id="quick-status-label">Novo Status *</label>
+          <select id="quick-status-select" required>
+            <!-- Preenchido via JS -->
+          </select>
+        </div>
+
+        <div class="form-group hidden" id="quick-status-motivo-group" style="margin-top: 14px;">
+          <label for="quick-status-motivo-select" style="color: var(--color-danger) !important;">Motivo do Cancelamento / Pausa *</label>
+          <select id="quick-status-motivo-select">
+            <option value="Preço / Orçamento">Preço / Orçamento</option>
+            <option value="Problema na Entrega / Logística">Problema na Entrega / Logística</option>
+            <option value="Tamanho da Cesta">Tamanho da Cesta (Muito grande/pequena)</option>
+            <option value="Mudança de Endereço / Viagem">Mudança de Endereço / Viagem</option>
+            <option value="Pouco Uso dos Orgânicos">Pouco Uso dos Orgânicos</option>
+            <option value="Pouca Variedade de Itens">Pouca Variedade de Itens</option>
+            <option value="Outros">Outros</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-top: 14px;">
+          <label for="quick-status-observacao">Justificativa / Observação *</label>
+          <input type="text" id="quick-status-observacao" required placeholder="Ex: Cliente solicitou pausa para férias de Julho">
+        </div>
+
+        <div class="modal-footer" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--color-border);">
+          <button class="btn-outline" type="button" id="btn-quick-status-cancel">Cancelar</button>
+          <button class="btn-primary" type="submit" id="btn-quick-status-submit" style="margin-left: auto;">
+            <i data-lucide="check-circle"></i>
+            <span>Confirmar Alteração</span>
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
