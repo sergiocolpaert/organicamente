@@ -52,44 +52,51 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       let planData = [];
 
+      // 1. Tentar buscar do Supabase
       if (isSupabaseConfigured()) {
         try {
-          planData = await getSubscribersFromSupabase();
+          const supabaseRows = await getSubscribersFromSupabase();
+          if (Array.isArray(supabaseRows) && supabaseRows.length > 0) {
+            planData = supabaseRows;
+          }
         } catch (supabaseErr) {
-          console.error('Erro no Supabase, caindo para fallback Sheets:', supabaseErr);
+          console.error('Erro ao consultar Supabase:', supabaseErr);
         }
       }
 
-      if (planData.length === 0 && sheetsUrl) {
-        const sheetsRes = await fetch(`${sheetsUrl}?token=${token}`, {
-          method: 'GET'
-        });
-
-        if (!sheetsRes.ok) {
-          const errText = await sheetsRes.text();
-          throw new Error(`Erro ao acessar fonte de dados: ${errText}`);
-        }
-
-        const responseText = await sheetsRes.text();
-        const contentType = sheetsRes.headers.get('content-type') || '';
-
-        if (!contentType.includes('application/json')) {
-          throw new Error('A fonte de dados retornou uma resposta inválida.');
-        }
-
+      // 2. Fallback: Tentar buscar do Google Sheets se Supabase estiver vazio
+      if ((!planData || planData.length === 0) && sheetsUrl) {
         try {
-          planData = JSON.parse(responseText);
-        } catch (e) {
-          throw new Error('Erro ao processar JSON retornado.');
+          const sheetsRes = await fetch(`${sheetsUrl}?token=${token}`, {
+            method: 'GET'
+          });
+
+          if (sheetsRes.ok) {
+            const responseText = await sheetsRes.text();
+            const contentType = sheetsRes.headers.get('content-type') || '';
+
+            if (contentType.includes('application/json')) {
+              const parsed = JSON.parse(responseText);
+              if (Array.isArray(parsed)) {
+                planData = parsed;
+              }
+            }
+          }
+        } catch (sheetsErr) {
+          console.error('Erro ao consultar Google Sheets:', sheetsErr);
         }
       }
 
-      if (!Array.isArray(planData) || planData.length === 0) {
-        return res.status(200).json([]);
+      if (!Array.isArray(planData)) {
+        planData = [];
       }
 
       // Filtrar linhas completamente vazias ou corrompidas (sem nome nem CPF)
       planData = planData.filter(row => row && row.nome && String(row.nome).trim() !== '' && String(row.nome).trim() !== '-');
+
+      if (planData.length === 0) {
+        return res.status(200).json([]);
+      }
 
       // Buscar faturas recentes em lote do Asaas para Bruno e Russo para otimizar velocidade
       // Buscar faturas recentes em lote do Asaas para Bruno e Russo para otimizar velocidade

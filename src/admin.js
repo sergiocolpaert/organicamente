@@ -2670,8 +2670,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const sidebarBtnLogs = document.getElementById('sidebar-btn-logs');
+
   if (btnOpenSystemLogs) {
     btnOpenSystemLogs.addEventListener('click', () => {
+      if (systemLogsModal) systemLogsModal.classList.add('active');
+      fetchLogs();
+    });
+  }
+
+  if (sidebarBtnLogs) {
+    sidebarBtnLogs.addEventListener('click', () => {
       if (systemLogsModal) systemLogsModal.classList.add('active');
       fetchLogs();
     });
