@@ -1820,55 +1820,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Cálculos automáticos reativos no formulário de cadastro
-  function setupReactiveCalculations(formPrefix) {
-    const cestaSelect = document.getElementById(`${formPrefix}-cestaTipo`);
-    const cestaValorInput = document.getElementById(`${formPrefix}-cestaValor`);
-    const ovosSelect = document.getElementById(`${formPrefix}-ovosTipo`);
-    const ovosValorInput = document.getElementById(`${formPrefix}-ovosValor`);
-    const totalInput = document.getElementById(`${formPrefix}-totalmensal`);
-    const primeiroInput = document.getElementById(`${formPrefix}-primeiropagamento`);
+  // Lógica de Seleção de Cards Interativos (Agricultores e Cestas) no Wizard
+  function setupWizardCards() {
+    const farmerCards = document.querySelectorAll('.farmer-card');
+    const basketCards = document.querySelectorAll('.basket-card');
+    const inputProdutor = document.getElementById('new-produtor');
+    const inputDiaEntrega = document.getElementById('new-diaentrega');
+    const inputCestaTipo = document.getElementById('new-cestaTipo');
+    const inputCestaValor = document.getElementById('new-cestaValor');
+    const ovosSelect = document.getElementById('new-ovosTipo');
+    const ovosValorInput = document.getElementById('new-ovosValor');
+    const totalInput = document.getElementById('new-totalmensal');
+    const primeiroInput = document.getElementById('new-primeiropagamento');
 
-    function calculate() {
-      const cestaVal = cestaSelect.value;
-      const ovosVal = ovosSelect.value;
+    function calculateWizardTotals() {
+      if (!inputCestaTipo || !totalInput || !primeiroInput) return;
+      const cestaVal = inputCestaTipo.value;
+      const ovosVal = ovosSelect ? ovosSelect.value : 'Sem Ovos';
 
-      // Cesta valor base
-      let cestaPrice = pricesConfig.cesta[cestaVal] || 0;
-      cestaValorInput.value = formatMoneyPlain(cestaPrice);
+      let cestaPrice = pricesConfig.cesta[cestaVal] || 180.0;
+      if (inputCestaValor) inputCestaValor.value = formatMoneyPlain(cestaPrice);
 
-      // Quantidade de entregas
       let deliveries = 4;
-      if (cestaVal === 'Cesta Quinzenal') {
-        deliveries = 2;
-      } else if (cestaVal === 'Entrega Avulsa (Unitária)') {
-        deliveries = 1;
-      }
+      if (cestaVal === 'Cesta Quinzenal') deliveries = 2;
+      else if (cestaVal === 'Entrega Avulsa (Unitária)') deliveries = 1;
 
-      // Ovos valor
       let eggsPrice = 0;
       if (ovosVal.includes('1 dúzia')) eggsPrice = 1 * deliveries * pricesConfig.eggCostPerDozen;
       else if (ovosVal.includes('2 dúzias')) eggsPrice = 2 * deliveries * pricesConfig.eggCostPerDozen;
       else if (ovosVal.includes('3 dúzias')) eggsPrice = 3 * deliveries * pricesConfig.eggCostPerDozen;
-      
-      ovosValorInput.value = formatMoneyPlain(eggsPrice);
 
-      // Totais
+      if (ovosValorInput) ovosValorInput.value = formatMoneyPlain(eggsPrice);
+
       const totalMensal = cestaVal === 'Entrega Avulsa (Unitária)' ? 0 : (cestaPrice + eggsPrice);
       totalInput.value = formatMoneyPlain(totalMensal);
 
-      // Primeiro pagamento = Cesta + Ovos + Adesão
       const primeiroPagamento = cestaPrice + eggsPrice + pricesConfig.adesao;
       primeiroInput.value = formatMoneyPlain(primeiroPagamento);
     }
 
-    if (cestaSelect && ovosSelect) {
-      cestaSelect.addEventListener('change', calculate);
-      ovosSelect.addEventListener('change', calculate);
+    farmerCards.forEach(card => {
+      card.addEventListener('click', () => {
+        farmerCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        if (inputProdutor) inputProdutor.value = card.dataset.farmer;
+        if (inputDiaEntrega) inputDiaEntrega.value = card.dataset.day;
+      });
+    });
+
+    basketCards.forEach(card => {
+      card.addEventListener('click', () => {
+        basketCards.forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        if (inputCestaTipo) inputCestaTipo.value = card.dataset.basket;
+        calculateWizardTotals();
+      });
+    });
+
+    if (ovosSelect) {
+      ovosSelect.addEventListener('change', calculateWizardTotals);
     }
   }
 
-  setupReactiveCalculations('new');
+  setupWizardCards();
   setupReactiveCalculations('edit');
 
   // Submit Cadastro

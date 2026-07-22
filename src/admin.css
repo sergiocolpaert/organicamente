@@ -2272,4 +2272,35 @@ tr:hover td {
   background-color: #0284c7;
 }
 
+/* ==========================================================================
+   CARDS DE SELEÇÃO INTERATIVA (AGRICULTOR & CESTAS) NO WIZARD
+   ========================================================================== */
+.wizard-card {
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  background-color: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.wizard-card:hover {
+  border-color: var(--color-secondary);
+  box-shadow: 0 4px 12px rgba(45, 106, 79, 0.1);
+  transform: translateY(-1px);
+}
+
+.wizard-card.active {
+  border-color: var(--color-primary);
+  background-color: #f4fbf7;
+  box-shadow: 0 4px 14px rgba(45, 106, 79, 0.18);
+}
+
+.wizard-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 

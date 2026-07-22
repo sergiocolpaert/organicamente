@@ -1059,84 +1059,124 @@
 
         <!-- ETAPA 3: PLANO & COBRANÇA -->
         <div class="wizard-step hidden" id="wizard-step-3">
-          <h3 style="margin-bottom: 16px;"><i data-lucide="shopping-bag"></i> Etapa 3: Plano & Cobrança Asaas</h3>
+          <h3 style="margin-bottom: 12px;"><i data-lucide="shopping-bag"></i> Etapa 3: Escolha do Plano & Agricultor</h3>
           
+          <!-- 1. SELEÇÃO DO AGRICULTOR (CARDS VISUAIS) -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-weight: 700; margin-bottom: 8px; display: block;">1. Selecione o Agricultor Parceiro *</label>
+            <div class="farmer-cards-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              
+              <!-- Card Bruno -->
+              <div class="wizard-card farmer-card active" data-farmer="Bruno e Família" data-day="Terça-feira">
+                <div class="wizard-card-header">
+                  <span class="farmer-avatar-badge" style="background: #2d6a4f; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">B</span>
+                  <div>
+                    <h4 style="margin: 0; font-size: 13.5px; color: var(--color-primary);">Bruno Branco</h4>
+                    <span style="font-size: 11px; color: var(--color-text-secondary);">Itaipava / RJ • Entrega: Terça-feira</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card Russo -->
+              <div class="wizard-card farmer-card" data-farmer="Russo e Família" data-day="Quarta-feira">
+                <div class="wizard-card-header">
+                  <span class="farmer-avatar-badge" style="background: #1b4332; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">R</span>
+                  <div>
+                    <h4 style="margin: 0; font-size: 13.5px; color: var(--color-primary);">Russo e Família</h4>
+                    <span style="font-size: 11px; color: var(--color-text-secondary);">Taquara / RJ • Entrega: Quarta-feira</span>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <!-- Inputs ocultos para o formulário -->
+            <input type="hidden" id="new-produtor" value="Bruno e Família" required>
+            <input type="hidden" id="new-diaentrega" value="Terça-feira" required>
+          </div>
+
+          <!-- 2. SELEÇÃO DO PLANO DE CESTA (CARDS VISUAIS) -->
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="font-weight: 700; margin-bottom: 8px; display: block;">2. Selecione o Plano de Assinatura *</label>
+            <div class="basket-cards-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              
+              <!-- Card Cesta Família -->
+              <div class="wizard-card basket-card active" data-basket="Cesta Família" data-price="180.00">
+                <div class="basket-card-info">
+                  <strong style="font-size: 13px; color: var(--color-primary); display: block;">Cesta Família</strong>
+                  <span style="font-size: 11px; color: var(--color-text-secondary); display: block;">10 a 12 variedades (Semanal)</span>
+                  <span style="font-size: 13px; font-weight: 700; color: var(--color-primary-light); margin-top: 4px; display: block;">R$ 180,00/mês</span>
+                </div>
+              </div>
+
+              <!-- Card Cesta Individual -->
+              <div class="wizard-card basket-card" data-basket="Cesta Individual" data-price="130.00">
+                <div class="basket-card-info">
+                  <strong style="font-size: 13px; color: var(--color-primary); display: block;">Cesta Individual</strong>
+                  <span style="font-size: 11px; color: var(--color-text-secondary); display: block;">6 a 8 variedades (Semanal)</span>
+                  <span style="font-size: 13px; font-weight: 700; color: var(--color-primary-light); margin-top: 4px; display: block;">R$ 130,00/mês</span>
+                </div>
+              </div>
+
+              <!-- Card Cesta Quinzenal -->
+              <div class="wizard-card basket-card" data-basket="Cesta Quinzenal" data-price="90.00">
+                <div class="basket-card-info">
+                  <strong style="font-size: 13px; color: var(--color-primary); display: block;">Cesta Quinzenal</strong>
+                  <span style="font-size: 11px; color: var(--color-text-secondary); display: block;">6 a 8 variedades (Quinzenal)</span>
+                  <span style="font-size: 13px; font-weight: 700; color: var(--color-primary-light); margin-top: 4px; display: block;">R$ 90,00/mês</span>
+                </div>
+              </div>
+
+              <!-- Card Entrega Avulsa -->
+              <div class="wizard-card basket-card" data-basket="Entrega Avulsa (Unitária)" data-price="45.00">
+                <div class="basket-card-info">
+                  <strong style="font-size: 13px; color: var(--color-primary); display: block;">Entrega Avulsa</strong>
+                  <span style="font-size: 11px; color: var(--color-text-secondary); display: block;">1 entrega avulsa de experiência</span>
+                  <span style="font-size: 13px; font-weight: 700; color: var(--color-primary-light); margin-top: 4px; display: block;">R$ 45,00/entrega</span>
+                </div>
+              </div>
+
+            </div>
+            <!-- Inputs ocultos para o formulário -->
+            <input type="hidden" id="new-cestaTipo" value="Cesta Família" required>
+            <input type="hidden" id="new-cestaValor" value="R$ 180,00" required>
+          </div>
+
+          <!-- 3. OPÇÕES DE OVOS & FORMA DE PAGAMENTO -->
           <div class="form-group-row">
-            <div class="form-group flex-1">
-              <label for="new-produtor">Agricultor Parceiro *</label>
-              <select id="new-produtor" required>
-                <option value="" disabled selected>Selecione o agricultor...</option>
-                <option value="Bruno e Família">Bruno e Família</option>
-                <option value="Russo e Família">Russo e Família</option>
-              </select>
-            </div>
-            <div class="form-group flex-1">
-              <label for="new-diaentrega">Dia de Entrega *</label>
-              <select id="new-diaentrega" required>
-                <option value="" disabled selected>Selecione o dia...</option>
-                <option value="Terça-feira">Terça-feira</option>
-                <option value="Quarta-feira">Quarta-feira</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-group-row" style="margin-top: 12px;">
-            <div class="form-group flex-1">
-              <label for="new-cestaTipo">Tipo de Cesta *</label>
-              <select id="new-cestaTipo" required>
-                <option value="" disabled selected>Selecione a cesta...</option>
-                <option value="Cesta Família">Cesta Família</option>
-                <option value="Cesta Individual">Cesta Individual</option>
-                <option value="Cesta Quinzenal">Cesta Quinzenal</option>
-                <option value="Entrega Avulsa (Unitária)">Entrega Avulsa (Unitária)</option>
-              </select>
-            </div>
-            <div class="form-group flex-1">
-              <label for="new-cestaValor">Valor da Cesta *</label>
-              <input type="text" id="new-cestaValor" required placeholder="R$ 0,00">
-            </div>
-          </div>
-
-          <div class="form-group-row" style="margin-top: 12px;">
             <div class="form-group flex-1">
               <label for="new-ovosTipo">Opcional de Ovos *</label>
               <select id="new-ovosTipo" required>
-                <option value="Sem Ovos">Sem Ovos</option>
+                <option value="Sem Ovos">Sem Ovos (R$ 0,00)</option>
                 <option value="Com Ovos Caipiras (1 dúzia)">Com Ovos Caipiras (1 dúzia)</option>
                 <option value="Com Ovos Caipiras (2 dúzias)">Com Ovos Caipiras (2 dúzias)</option>
                 <option value="Com Ovos Caipiras (3 dúzias)">Com Ovos Caipiras (3 dúzias)</option>
               </select>
+              <input type="hidden" id="new-ovosValor" value="R$ 0,00">
             </div>
             <div class="form-group flex-1">
-              <label for="new-ovosValor">Valor dos Ovos *</label>
-              <input type="text" id="new-ovosValor" required placeholder="R$ 0,00" value="R$ 0,00">
-            </div>
-          </div>
-
-          <div class="form-group-row" style="margin-top: 12px;">
-            <div class="form-group flex-1">
-              <label for="new-totalmensal">Total Mensalidade *</label>
-              <input type="text" id="new-totalmensal" required placeholder="R$ 0,00">
-            </div>
-            <div class="form-group flex-1">
-              <label for="new-primeiropagamento">Primeiro Pagamento (Adesão) *</label>
-              <input type="text" id="new-primeiropagamento" required placeholder="R$ 0,00">
-            </div>
-          </div>
-
-          <div class="form-group-row" style="margin-top: 12px;">
-            <div class="form-group flex-1">
-              <label for="new-forma-pagamento">Cobrança Asaas *</label>
+              <label for="new-forma-pagamento">Forma de Pagamento Asaas *</label>
               <select id="new-forma-pagamento">
                 <option value="PIX">PIX</option>
                 <option value="BOLETO">BOLETO</option>
               </select>
             </div>
-            <div class="form-group flex-1">
-              <label for="new-statusAssinatura">Status Inicial *</label>
-              <select id="new-statusAssinatura" required>
-                <option value="Pendente" selected>Pendente (Aguardando Pagamento)</option>
-                <option value="Ativo">Ativo (Confirmado)</option>
+          </div>
+
+          <!-- RESUMO FINANCEIRO -->
+          <div class="financial-summary-box" style="background: var(--color-accent); border: 1.5px solid var(--color-secondary); border-radius: var(--radius-lg); padding: 14px; margin-top: 14px; display: flex; gap: 16px; justify-content: space-between; align-items: center;">
+            <div>
+              <span style="font-size: 11px; color: var(--color-text-secondary); display: block;">Mensalidade Total:</span>
+              <input type="text" id="new-totalmensal" readonly style="font-weight: 700; color: var(--color-primary); font-size: 16px; border: none; background: transparent; padding: 0; width: 100px;" value="R$ 180,00">
+            </div>
+            <div>
+              <span style="font-size: 11px; color: var(--color-text-secondary); display: block;">1º Pagamento (Adesão):</span>
+              <input type="text" id="new-primeiropagamento" readonly style="font-weight: 700; color: var(--color-primary-light); font-size: 16px; border: none; background: transparent; padding: 0; width: 100px;" value="R$ 215,00">
+            </div>
+            <div style="margin-left: auto;">
+              <span style="font-size: 11px; color: var(--color-text-secondary); display: block;">Status Inicial:</span>
+              <select id="new-statusAssinatura" required style="padding: 4px 8px; font-size: 12px;">
+                <option value="Pendente" selected>Pendente</option>
+                <option value="Ativa">Ativa</option>
               </select>
             </div>
           </div>
