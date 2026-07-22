@@ -81,202 +81,327 @@
   <!-- ========================================== -->
   <!-- 2. PAINEL PRINCIPAL (EXIBE SE LOGADO)      -->
   <!-- ========================================== -->
-  <div id="admin-dashboard" class="dashboard-wrapper hidden">
-    <!-- Header Principal -->
-    <header class="main-header">
-      <div class="header-logo">
-        <!-- Logo Oficial da Organicamente -->
-        <img class="official-logo-img header-logo-img" src="/logo_organicamente.png" alt="Logo Organicamente" width="48" height="48">
-        <div class="logo-text">
-          <h1>Organicamente</h1>
-          <p>Painel Administrativo</p>
+  <!-- ========================================== -->
+  <!-- 2. PAINEL PRINCIPAL (LAYOUT MULTI-TELAS)   -->
+  <!-- ========================================== -->
+  <div id="admin-dashboard" class="app-shell hidden">
+    
+    <!-- Sidebar Navegação Lateral -->
+    <aside class="app-sidebar">
+      <div class="sidebar-brand">
+        <img class="official-logo-img sidebar-logo-img" src="/logo_organicamente.png" alt="Logo Organicamente" width="44" height="44">
+        <div class="brand-text">
+          <h2>Organicamente</h2>
+          <span>Gestão da Comunidade</span>
         </div>
       </div>
-      
-      <div class="user-control">
-        <button id="btn-new-subscriber" class="btn-new-sub">
-          <i data-lucide="plus"></i>
-          <span>Novo Assinante</span>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="view-dashboard">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Visão Geral</span>
         </button>
-        <span class="user-badge">
-          <i data-lucide="shield-check"></i>
-          <span>Administrador</span>
-        </span>
-        <button id="btn-logout" class="btn-logout" title="Sair do painel">
+
+        <button class="nav-item" data-view="view-deliveries">
+          <i data-lucide="truck"></i>
+          <span>Entregas & Cestas</span>
+        </button>
+
+        <button class="nav-item" data-view="view-customers">
+          <i data-lucide="users"></i>
+          <span>Clientes</span>
+        </button>
+
+        <button class="nav-item" data-view="view-churn">
+          <i data-lucide="trending-down"></i>
+          <span>Cancelamentos</span>
+        </button>
+
+        <button class="nav-item" data-view="view-settings">
+          <i data-lucide="settings"></i>
+          <span>Ajustes</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <span class="user-badge"><i data-lucide="shield-check"></i> Admin</span>
+        </div>
+        <button id="btn-logout" class="btn-sidebar-logout" title="Sair do painel">
           <i data-lucide="log-out"></i>
           <span>Sair</span>
         </button>
       </div>
-    </header>
+    </aside>
 
-    <!-- Área de Conteúdo -->
-    <main class="dashboard-content">
-      
-      <!-- Seção 1: Indicadores (KPIs) -->
-      <section class="kpi-grid">
-        <!-- KPI 1 -->
-        <div class="kpi-card">
-          <div class="kpi-icon color-1">
-            <i data-lucide="dollar-sign"></i>
-          </div>
-          <div class="kpi-data">
-            <h3>Faturamento Estimado</h3>
-            <div class="kpi-value" id="kpi-mrr">R$ 0,00</div>
-            <p class="kpi-sub">Mensalidade recorrente ativa</p>
-          </div>
+    <!-- Conteúdo Principal -->
+    <main class="app-main">
+      <header class="app-topbar">
+        <div class="topbar-title">
+          <h1 id="page-title">Visão Geral</h1>
+          <p id="page-subtitle">Acompanhe os principais números e avisos do projeto</p>
         </div>
-        
-        <!-- KPI 2 -->
-        <div class="kpi-card">
-          <div class="kpi-icon color-2">
-            <i data-lucide="users"></i>
-          </div>
-          <div class="kpi-data">
-            <h3>Assinantes Ativos</h3>
-            <div class="kpi-value" id="kpi-actives">0</div>
-            <p class="kpi-sub">Total de assinaturas registradas</p>
-          </div>
+        <div class="topbar-actions">
+          <button id="btn-new-subscriber" class="btn-primary">
+            <i data-lucide="plus"></i>
+            <span>Novo Cliente</span>
+          </button>
+          <button id="btn-refresh" class="btn-refresh" title="Atualizar dados">
+            <i data-lucide="rotate-cw"></i>
+            <span>Atualizar</span>
+          </button>
         </div>
-        
-        <!-- KPI 3 -->
-        <div class="kpi-card">
-          <div class="kpi-icon color-3">
-            <i data-lucide="clock"></i>
-          </div>
-          <div class="kpi-data">
-            <h3>Aguardando Pagamento</h3>
-            <div class="kpi-value" id="kpi-pending">0</div>
-            <p class="kpi-sub">Cobranças pendentes no Asaas</p>
-          </div>
-        </div>
+      </header>
 
-        <!-- KPI 4 (Distribuição de Produtores) -->
-        <div class="kpi-card distribution-card">
-          <h3>Distribuição de Produtores</h3>
-          <div class="distribution-bars">
-            <div class="bar-item">
-              <div class="bar-label">
-                <span>Bruno</span>
-                <span id="dist-bruno-qty">0 (0%)</span>
-              </div>
-              <div class="bar-track">
-                <div class="bar-fill color-bruno" id="dist-bruno-bar" style="width: 0%;"></div>
+      <div class="views-container">
+        
+        <!-- ========================================== -->
+        <!-- TELA 1: VISÃO GERAL                        -->
+        <!-- ========================================== -->
+        <section id="view-dashboard" class="app-view active-view">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon color-1"><i data-lucide="dollar-sign"></i></div>
+              <div class="kpi-data">
+                <h3>Faturamento Estimado</h3>
+                <div class="kpi-value" id="kpi-mrr">R$ 0,00</div>
+                <p class="kpi-sub">Mensalidade recorrente ativa</p>
               </div>
             </div>
-            <div class="bar-item">
-              <div class="bar-label">
-                <span>Russo</span>
-                <span id="dist-russo-qty">0 (0%)</span>
+            
+            <div class="kpi-card">
+              <div class="kpi-icon color-2"><i data-lucide="users"></i></div>
+              <div class="kpi-data">
+                <h3>Clientes Ativos</h3>
+                <div class="kpi-value" id="kpi-actives">0</div>
+                <p class="kpi-sub">Assinantes em dia</p>
               </div>
-              <div class="bar-track">
-                <div class="bar-fill color-russo" id="dist-russo-bar" style="width: 0%;"></div>
+            </div>
+            
+            <div class="kpi-card">
+              <div class="kpi-icon color-3"><i data-lucide="clock"></i></div>
+              <div class="kpi-data">
+                <h3>Aguardando Pagamento</h3>
+                <div class="kpi-value" id="kpi-pending">0</div>
+                <p class="kpi-sub">Faturas pendentes Asaas</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon color-1"><i data-lucide="user-plus"></i></div>
+              <div class="kpi-data">
+                <h3>Novas Entradas (30d)</h3>
+                <div class="kpi-value" id="kpi-entries-30d">0</div>
+                <p class="kpi-sub">Cadastros no mês</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon color-danger"><i data-lucide="user-minus"></i></div>
+              <div class="kpi-data">
+                <h3>Saídas / Cancelamentos (30d)</h3>
+                <div class="kpi-value text-danger" id="kpi-churn-30d">0</div>
+                <p class="kpi-sub" id="kpi-churn-rate">Taxa de Saída: 0%</p>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon color-2"><i data-lucide="trending-up"></i></div>
+              <div class="kpi-data">
+                <h3>Saldo do Mês</h3>
+                <div class="kpi-value" id="kpi-net-growth">+0</div>
+                <p class="kpi-sub">Crescimento líquido (Entradas - Saídas)</p>
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- KPI 5: Entradas (30d) -->
-        <div class="kpi-card">
-          <div class="kpi-icon color-1">
-            <i data-lucide="user-plus"></i>
-          </div>
-          <div class="kpi-data">
-            <h3>Entradas (30 dias)</h3>
-            <div class="kpi-value" id="kpi-entries-30d">0</div>
-            <p class="kpi-sub">Novas assinaturas no período</p>
-          </div>
-        </div>
+          <!-- Cards de Avisos e Produtores -->
+          <div class="dashboard-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px;">
+            <div class="form-section-column">
+              <h3><i data-lucide="bell"></i> Avisos & Lembretes Importantes</h3>
+              <div class="alerts-feed">
+                <div class="alert-box-item warning">
+                  <i data-lucide="alert-triangle"></i>
+                  <div>
+                    <strong>Faturas em Aberto</strong>
+                    <p>Confira a aba de Clientes para acompanhar as cobranças pendentes do mês.</p>
+                  </div>
+                </div>
+                <div class="alert-box-item info">
+                  <i data-lucide="truck"></i>
+                  <div>
+                    <strong>Organização das Entregas</strong>
+                    <p>Acesse a tela "Entregas & Cestas" para imprimir o roteiro de entrega da semana.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        <!-- KPI 6: Saídas / Churn (30d) -->
-        <div class="kpi-card">
-          <div class="kpi-icon color-danger">
-            <i data-lucide="user-minus"></i>
+            <div class="form-section-column">
+              <h3><i data-lucide="pie-chart"></i> Distribuição por Produtor</h3>
+              <div class="distribution-bars" style="display: flex; flex-direction: column; gap: 16px; margin-top: 8px;">
+                <div class="bar-item">
+                  <div class="bar-label" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span><strong>Bruno</strong></span>
+                    <span id="dist-bruno-qty">0 (0%)</span>
+                  </div>
+                  <div class="bar-track" style="height: 10px; background: #e2e8f0; border-radius: 6px;">
+                    <div class="bar-fill color-bruno" id="dist-bruno-bar" style="width: 0%; height: 100%; border-radius: 6px; transition: width 0.4s ease;"></div>
+                  </div>
+                </div>
+                <div class="bar-item">
+                  <div class="bar-label" style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span><strong>Russo</strong></span>
+                    <span id="dist-russo-qty">0 (0%)</span>
+                  </div>
+                  <div class="bar-track" style="height: 10px; background: #e2e8f0; border-radius: 6px;">
+                    <div class="bar-fill color-russo" id="dist-russo-bar" style="width: 0%; height: 100%; border-radius: 6px; transition: width 0.4s ease;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="kpi-data">
-            <h3>Saídas / Churn (30d)</h3>
-            <div class="kpi-value text-danger" id="kpi-churn-30d">0</div>
-            <p class="kpi-sub" id="kpi-churn-rate">Taxa de Churn: 0%</p>
-          </div>
-        </div>
+        </section>
 
-        <!-- KPI 7: Crescimento Líquido -->
-        <div class="kpi-card">
-          <div class="kpi-icon color-2">
-            <i data-lucide="trending-up"></i>
-          </div>
-          <div class="kpi-data">
-            <h3>Crescimento Líquido</h3>
-            <div class="kpi-value" id="kpi-net-growth">+0</div>
-            <p class="kpi-sub">Saldo do período (Entradas - Saídas)</p>
-          </div>
-        </div>
-      </section>
+        <!-- ========================================== -->
+        <!-- TELA 2: ENTREGAS & CESTAS                  -->
+        <!-- ========================================== -->
+        <section id="view-deliveries" class="app-view hidden">
+          <div class="table-toolbar">
+            <div class="filter-tabs" id="delivery-filter-tabs">
+              <button class="tab-btn active" data-filter="all">Todas as Entregas</button>
+              <button class="tab-btn" data-filter="bruno">Bruno</button>
+              <button class="tab-btn" data-filter="russo">Russo</button>
+              <button class="tab-btn" data-filter="terca">Terça-feira</button>
+              <button class="tab-btn" data-filter="quarta">Quarta-feira</button>
+            </div>
 
-      <!-- Seção 2: Filtros e Tabela -->
-      <section class="table-section">
-        <div class="table-toolbar">
-          <!-- Filtro de Busca -->
-          <div class="search-box">
-            <i data-lucide="search"></i>
-            <input type="text" id="admin-search-input" placeholder="Buscar assinante por nome, e-mail ou CPF...">
-            <button id="clear-search-btn" class="clear-search hidden">&times;</button>
+            <button id="btn-delivery-report" class="btn-primary" style="margin-left: auto;">
+              <i data-lucide="printer"></i>
+              <span>Gerar Roteiro de Entregas</span>
+            </button>
+          </div>
+
+          <div class="table-container" style="margin-top: 16px;">
+            <table id="deliveries-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Endereço / Bairro</th>
+                  <th>Cesta / Opcionais</th>
+                  <th>Produtor / Dia</th>
+                  <th>Horário / Obs</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="deliveries-table-body">
+                <tr>
+                  <td colspan="6" class="table-loading">Carregando entregas da semana...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TELA 3: CLIENTES                           -->
+        <!-- ========================================== -->
+        <section id="view-customers" class="app-view hidden">
+          <div class="table-toolbar">
+            <div class="search-box">
+              <i data-lucide="search"></i>
+              <input type="text" id="admin-search-input" placeholder="Buscar por nome, e-mail ou CPF...">
+              <button id="clear-search-btn" class="clear-search hidden">&times;</button>
+            </div>
+            
+            <div class="filter-tabs" id="filter-tabs-container">
+              <button class="tab-btn active" data-filter="all">Todos</button>
+              <button class="tab-btn" data-filter="ativo">Ativos</button>
+              <button class="tab-btn" data-filter="atrasado">Atrasados</button>
+            </div>
+          </div>
+
+          <div class="table-container" style="margin-top: 16px;">
+            <table id="subscribers-table">
+              <thead>
+                <tr>
+                  <th>Assinante</th>
+                  <th>Cesta / Opcional</th>
+                  <th>Produtor / Dia</th>
+                  <th>Faturamento</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <tr>
+                  <td colspan="6" class="table-loading">Carregando lista de clientes...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
           
-          <!-- Filtros Rápidos (Abas) -->
-          <div class="filter-tabs" id="filter-tabs-container">
-            <button class="tab-btn active" data-filter="all">Todos</button>
-            <button class="tab-btn" data-filter="bruno">Bruno</button>
-            <button class="tab-btn" data-filter="russo">Russo</button>
-            <button class="tab-btn" data-filter="terca">Terça</button>
-            <button class="tab-btn" data-filter="quarta">Quarta</button>
-            <button class="tab-btn" data-filter="ativo">Ativos</button>
-            <button class="tab-btn" data-filter="atrasado">Atrasados</button>
+          <div class="table-footer">
+            <span id="table-rows-count">Mostrando 0 clientes</span>
           </div>
-        </div>
+        </section>
 
-        <!-- Tabela -->
-        <div class="table-container">
-          <table id="subscribers-table">
-            <thead>
-              <tr>
-                <th>Assinante</th>
-                <th>Cesta / Opcional</th>
-                <th>Produtor / Dia</th>
-                <th>Faturamento</th>
-                <th>Status</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-            <tbody id="table-body">
-              <tr>
-                <td colspan="6" class="table-loading">
-                  <div class="skeleton-row">Carregando dados das assinaturas...</div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        <!-- Rodapé da Tabela -->
-        <div class="table-footer">
-          <span id="table-rows-count">Mostrando 0 assinantes</span>
-          <div class="footer-buttons-row">
-            <button id="btn-retention-analytics" class="btn-delivery-report" style="background-color: var(--color-primary-light); color: white;">
-              <i data-lucide="bar-chart-2"></i>
-              <span>Inteligência de Retenção</span>
-            </button>
-            <button id="btn-delivery-report" class="btn-delivery-report">
-              <i data-lucide="printer"></i>
-              <span>Roteiro de Entregas</span>
-            </button>
-            <button id="btn-refresh" class="btn-refresh">
-              <i data-lucide="rotate-cw"></i>
-              <span>Atualizar Dados</span>
-            </button>
+        <!-- ========================================== -->
+        <!-- TELA 4: CANCELAMENTOS & SAÍDAS             -->
+        <!-- ========================================== -->
+        <section id="view-churn" class="app-view hidden">
+          <div class="form-section-column">
+            <h3><i data-lucide="pie-chart"></i> Principais Motivos de Saída</h3>
+            <p style="font-size: 13.5px; color: var(--color-text-secondary); margin-bottom: 16px;">
+              Entenda os motivos declarados pelos clientes ao cancelar ou inativar a assinatura:
+            </p>
+            <div id="churn-view-reasons-container" class="distribution-bars" style="display: flex; flex-direction: column; gap: 12px;">
+              <!-- Renderizado via JS -->
+            </div>
           </div>
-        </div>
-      </section>
-      
+
+          <div class="form-section-column" style="margin-top: 24px;">
+            <h3><i data-lucide="user-x"></i> Histórico de Clientes Inativos</h3>
+            <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Produtor / Cesta</th>
+                    <th>Data da Saída</th>
+                    <th>Motivo Registrado</th>
+                  </tr>
+                </thead>
+                <tbody id="churn-view-table-body">
+                  <!-- Renderizado via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TELA 5: AJUSTES                            -->
+        <!-- ========================================== -->
+        <section id="view-settings" class="app-view hidden">
+          <div class="form-section-column" style="max-width: 600px;">
+            <h3><i data-lucide="settings"></i> Ajustes Gerais do Sistema</h3>
+            <div class="form-group" style="margin-top: 12px;">
+              <label>Nome da Plataforma</label>
+              <input type="text" value="Organicamente System" readonly class="input-readonly">
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+              <label>Status da Conexão Asaas</label>
+              <input type="text" value="Conectado e Operacional" readonly class="input-readonly" style="color: #166534 !important; font-weight: bold;">
+            </div>
+            <div class="form-group" style="margin-top: 12px;">
+              <label>Suporte Técnico</label>
+              <p style="font-size: 13px; color: var(--color-text-secondary);">Sistema otimizado para gestão da comunidade CSA Organicamente.</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
     </main>
   </div>
 

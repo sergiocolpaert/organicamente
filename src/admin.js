@@ -40,6 +40,60 @@ document.addEventListener('DOMContentLoaded', () => {
   const tableRowsCount = document.getElementById('table-rows-count');
   const btnRefresh = document.getElementById('btn-refresh');
 
+  // Lógica de Navegação Multi-telas (Sidebar Navigation)
+  const navItems = document.querySelectorAll('.nav-item');
+  const appViews = document.querySelectorAll('.app-view');
+  const pageTitle = document.getElementById('page-title');
+  const pageSubtitle = document.getElementById('page-subtitle');
+
+  const viewTitles = {
+    'view-dashboard': { title: 'Visão Geral', subtitle: 'Acompanhe os principais números e avisos do projeto' },
+    'view-deliveries': { title: 'Entregas & Cestas', subtitle: 'Organize as cestas por produtor e dia de entrega' },
+    'view-customers': { title: 'Clientes', subtitle: 'Gerencie a base de clientes, fichas e pagamentos' },
+    'view-churn': { title: 'Cancelamentos', subtitle: 'Analise os motivos das saídas e o saldo de inscritos' },
+    'view-settings': { title: 'Ajustes', subtitle: 'Configurações gerais e segurança do sistema' }
+  };
+
+  function switchView(viewId) {
+    navItems.forEach(item => {
+      if (item.getAttribute('data-view') === viewId) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
+    });
+
+    appViews.forEach(view => {
+      if (view.id === viewId) {
+        view.classList.remove('hidden');
+        view.classList.add('active-view');
+      } else {
+        view.classList.add('hidden');
+        view.classList.remove('active-view');
+      }
+    });
+
+    if (viewTitles[viewId]) {
+      if (pageTitle) pageTitle.textContent = viewTitles[viewId].title;
+      if (pageSubtitle) pageSubtitle.textContent = viewTitles[viewId].subtitle;
+    }
+
+    if (viewId === 'view-churn') {
+      renderChurnView();
+    } else if (viewId === 'view-deliveries') {
+      renderDeliveriesView();
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const viewId = item.getAttribute('data-view');
+      switchView(viewId);
+    });
+  });
+
   // Seletores DOM - KPIs
   const kpiMrr = document.getElementById('kpi-mrr');
   const kpiActives = document.getElementById('kpi-actives');
@@ -438,7 +492,145 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  // ==========================================================================
+  // RENDERIZAÇÃO DAS NOVAS TELAS (ENTREGAS & CANCELAMENTOS)
+  // ==========================================================================
+  
+  let deliveryFilter = 'all';
+
+  const deliveryFilterTabs = document.getElementById('delivery-filter-tabs');
+  if (deliveryFilterTabs) {
+    deliveryFilterTabs.addEventListener('click', (e) => {
+      const btn = e.target.closest('.tab-btn');
+      if (!btn) return;
+      deliveryFilterTabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      deliveryFilter = btn.getAttribute('data-filter');
+      renderDeliveriesView();
+    });
+  }
+
+  function renderDeliveriesView() {
+    const tbody = document.getElementById('deliveries-table-body');
+    if (!tbody) return;
+
+    let list = subscribers.filter(s => s.statusAssinatura === 'Ativo');
+
+    if (deliveryFilter === 'bruno') {
+      list = list.filter(s => (s.produtor || '').toLowerCase().includes('bruno'));
+    } else if (deliveryFilter === 'russo') {
+      list = list.filter(s => (s.produtor || '').toLowerCase().includes('russo') || (s.produtor || '').toLowerCase().includes('antônio') || (s.produtor || '').toLowerCase().includes('antonio'));
+    } else if (deliveryFilter === 'terca') {
+      list = list.filter(s => (s.diaEntrega || '').toLowerCase().includes('terça') || (s.diaEntrega || '').toLowerCase().includes('terca'));
+    } else if (deliveryFilter === 'quarta') {
+      list = list.filter(s => (s.diaEntrega || '').toLowerCase().includes('quarta'));
+    }
+
+    tbody.innerHTML = '';
+
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--color-text-secondary);">Nenhuma entrega ativa encontrada para este filtro.</td></tr>';
+      return;
+    }
+
+    list.forEach(sub => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${sub.nome}</strong><br><span style="font-size: 11px; color: var(--color-text-secondary);">${formatPhone(sub.telefone)}</span></td>
+        <td>${sub.endereco} - ${sub.bairro}<br><span style="font-size: 11px; color: var(--color-text-secondary);">CEP: ${formatCEP(sub.cep)}</span></td>
+        <td><strong>${sub.cestaTipo}</strong><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.ovosTipo}</span></td>
+        <td><span class="font-highlight">${sub.produtor}</span><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.diaEntrega}</span></td>
+        <td><span style="font-size: 12px;">${sub.horario || 'Comercial'}</span><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.pontoReferencia || 'Sem ref.'}</span></td>
+        <td>
+          <button class="btn-action-view btn-view-delivery-sub" data-cpf="${sub.cpf}">
+            <i data-lucide="eye"></i>
+            <span>Ver Ficha</span>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.btn-view-delivery-sub').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const cpf = e.currentTarget.getAttribute('data-cpf');
+        const sub = subscribers.find(s => String(s.cpf).replace(/\D/g, '') === String(cpf).replace(/\D/g, ''));
+        if (sub) openDetailsModal(sub);
+      });
+    });
+
     if (window.lucide) window.lucide.createIcons();
+  }
+
+  function renderChurnView() {
+    const reasonsContainer = document.getElementById('churn-view-reasons-container');
+    const historyTbody = document.getElementById('churn-view-table-body');
+
+    const reasonsCount = {};
+    const inactiveList = [];
+
+    subscribers.forEach(sub => {
+      const isInactive = sub.statusAssinatura === 'Inativo' || sub.statusAssinatura === 'Cancelado';
+      if (isInactive) {
+        inactiveList.push(sub);
+        const reason = sub.motivoCancelamento || 'Outros / Não especificado';
+        reasonsCount[reason] = (reasonsCount[reason] || 0) + 1;
+      }
+    });
+
+    if (reasonsContainer) {
+      reasonsContainer.innerHTML = '';
+      const total = Object.values(reasonsCount).reduce((a, b) => a + b, 0);
+
+      if (total === 0) {
+        reasonsContainer.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center;">Nenhum cancelamento ou inativação registrada com motivo.</p>';
+      } else {
+        Object.entries(reasonsCount)
+          .sort((a, b) => b[1] - a[1])
+          .forEach(([reason, count]) => {
+            const pct = Math.round((count / total) * 100);
+            const barItem = document.createElement('div');
+            barItem.className = 'bar-item';
+            barItem.innerHTML = `
+              <div class="bar-label" style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px;">
+                <span><strong>${reason}</strong></span>
+                <span style="color: var(--color-danger); font-weight: 600;">${count} (${pct}%)</span>
+              </div>
+              <div class="bar-track" style="height: 10px; background: #fee2e2; border-radius: 6px; overflow: hidden;">
+                <div class="bar-fill color-danger" style="width: ${pct}%; height: 100%; background: var(--color-danger); border-radius: 6px; transition: width 0.4s ease;"></div>
+              </div>
+            `;
+            reasonsContainer.appendChild(barItem);
+          });
+      }
+    }
+
+    if (historyTbody) {
+      historyTbody.innerHTML = '';
+
+      if (inactiveList.length === 0) {
+        historyTbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--color-text-secondary); padding: 16px;">Nenhum cliente inativo ou cancelado no registro.</td></tr>';
+      } else {
+        inactiveList.forEach(sub => {
+          const row = document.createElement('tr');
+          const dateStr = sub.dataStatusAlterado ? new Date(sub.dataStatusAlterado).toLocaleDateString('pt-BR') : (sub.dataHora ? new Date(sub.dataHora).toLocaleDateString('pt-BR') : '-');
+          const reasonStr = sub.motivoCancelamento ? `${sub.motivoCancelamento}${sub.motivoDetalhe ? ' (' + sub.motivoDetalhe + ')' : ''}` : 'Não informado';
+
+          row.innerHTML = `
+            <td><strong>${sub.nome}</strong><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.email}</span></td>
+            <td>${sub.produtor}<br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.cestaTipo}</span></td>
+            <td>${dateStr}</td>
+            <td><span class="badge atrasada" style="font-size: 10px;">${sub.statusAssinatura}</span><br><span style="font-size: 11px; color: var(--color-text-secondary);">${reasonStr}</span></td>
+          `;
+          historyTbody.appendChild(row);
+        });
+      }
+    }
   }
 
   function applyFilters() {
