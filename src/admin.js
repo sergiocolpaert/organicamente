@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Seletores DOM - Tabela & Filtros
   const tableBody = document.getElementById('table-body');
+  const tableRowsCount = document.getElementById('table-rows-count');
   const searchInput = document.getElementById('admin-search-input');
   const clearSearchBtn = document.getElementById('clear-search-btn');
   const filterTabsContainer = document.getElementById('filter-tabs-container');
@@ -466,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
           </td>
         </tr>
       `;
-      tableRowsCount.textContent = 'Mostrando 0 assinantes';
+      if (tableRowsCount) tableRowsCount.textContent = 'Mostrando 0 assinantes';
       if (window.lucide) window.lucide.createIcons();
       return;
     }
@@ -543,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tableBody.appendChild(row);
     });
 
-    tableRowsCount.textContent = `Mostrando ${filteredSubscribers.length} de ${subscribers.length} clientes`;
+    if (tableRowsCount) tableRowsCount.textContent = `Mostrando ${filteredSubscribers.length} de ${subscribers.length} clientes`;
 
     if (window.lucide) {
       window.lucide.createIcons();
