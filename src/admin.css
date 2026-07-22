@@ -2006,6 +2006,7 @@ tr:hover td {
   border-radius: var(--radius-lg);
   font-size: 13px;
   line-height: 1.4;
+  position: relative;
 }
 
 .alert-box-item.warning {
@@ -2028,6 +2029,44 @@ tr:hover td {
 .alert-box-item.info i {
   color: #2563eb;
   margin-top: 2px;
+}
+
+.alert-box-item.danger {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.alert-box-item.danger i {
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+.btn-dismiss-alert {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: currentColor;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: opacity var(--transition-fast);
+}
+
+.btn-dismiss-alert:hover {
+  opacity: 1;
+}
+
+/* LINHAS DE TABELA CLICÁVEIS */
+.clickable-row {
+  cursor: pointer !important;
+  transition: background-color var(--transition-fast) !important;
+}
+
+.clickable-row:hover {
+  background-color: rgba(45, 106, 79, 0.06) !important;
 }
 
 

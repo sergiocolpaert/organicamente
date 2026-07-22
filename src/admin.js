@@ -445,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const row = document.createElement('tr');
+      row.className = 'clickable-row';
       row.innerHTML = `
         <td>
           <div class="cell-client">
@@ -471,26 +472,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <span class="badge ${statusClass}">${statusLabel}</span>
           <div class="cell-basket-sub" style="margin-top: 4px; font-size: 11px; color: ${asaasStyleColor}; font-weight: 600;">${asaasLabel}</div>
         </td>
-        <td>
-          <button class="btn-action-view" data-index="${idx}">
-            <i data-lucide="eye"></i>
-            <span>Ver Detalhes</span>
-          </button>
-        </td>
       `;
+
+      row.addEventListener('click', () => {
+        openDetailsModal(sub);
+      });
 
       tableBody.appendChild(row);
     });
 
-    tableRowsCount.textContent = `Mostrando ${filteredSubscribers.length} de ${subscribers.length} assinantes`;
-
-    const viewButtons = tableBody.querySelectorAll('.btn-action-view');
-    viewButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.getAttribute('data-index'), 10);
-        openDetailsModal(filteredSubscribers[idx]);
-      });
-    });
+    tableRowsCount.textContent = `Mostrando ${filteredSubscribers.length} de ${subscribers.length} clientes`;
 
     if (window.lucide) {
       window.lucide.createIcons();
@@ -534,34 +525,24 @@ document.addEventListener('DOMContentLoaded', () => {
     tbody.innerHTML = '';
 
     if (list.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 24px; color: var(--color-text-secondary);">Nenhuma entrega ativa encontrada para este filtro.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 24px; color: var(--color-text-secondary);">Nenhuma entrega ativa encontrada para este filtro.</td></tr>';
       return;
     }
 
     list.forEach(sub => {
       const tr = document.createElement('tr');
+      tr.className = 'clickable-row';
       tr.innerHTML = `
         <td><strong>${sub.nome}</strong><br><span style="font-size: 11px; color: var(--color-text-secondary);">${formatPhone(sub.telefone)}</span></td>
         <td>${sub.endereco} - ${sub.bairro}<br><span style="font-size: 11px; color: var(--color-text-secondary);">CEP: ${formatCEP(sub.cep)}</span></td>
         <td><strong>${sub.cestaTipo}</strong><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.ovosTipo}</span></td>
         <td><span class="font-highlight">${sub.produtor}</span><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.diaEntrega}</span></td>
         <td><span style="font-size: 12px;">${sub.horario || 'Comercial'}</span><br><span style="font-size: 11px; color: var(--color-text-secondary);">${sub.pontoReferencia || 'Sem ref.'}</span></td>
-        <td>
-          <button class="btn-action-view btn-view-delivery-sub" data-cpf="${sub.cpf}">
-            <i data-lucide="eye"></i>
-            <span>Ver Ficha</span>
-          </button>
-        </td>
       `;
-      tbody.appendChild(tr);
-    });
-
-    tbody.querySelectorAll('.btn-view-delivery-sub').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const cpf = e.currentTarget.getAttribute('data-cpf');
-        const sub = subscribers.find(s => String(s.cpf).replace(/\D/g, '') === String(cpf).replace(/\D/g, ''));
-        if (sub) openDetailsModal(sub);
+      tr.addEventListener('click', () => {
+        openDetailsModal(sub);
       });
+      tbody.appendChild(tr);
     });
 
     if (window.lucide) window.lucide.createIcons();
@@ -794,6 +775,151 @@ document.addEventListener('DOMContentLoaded', () => {
       distBrunoBar.style.width = '0%';
       distRussoBar.style.width = '0%';
     }
+
+    generateDynamicNotifications();
+  }
+
+  // ==========================================================================
+  // NOTIFICAÇÕES AUTOMÁTICAS E DINÂMICAS DO DASHBOARD
+  // ==========================================================================
+  
+  let dismissedAlerts = new Set();
+
+  const btnClearAlerts = document.getElementById('btn-clear-alerts');
+  if (btnClearAlerts) {
+    btnClearAlerts.addEventListener('click', () => {
+      dismissedAlerts.clear();
+      dismissedAlerts.add('ALL_CLEARED');
+      const container = document.getElementById('alerts-feed-container');
+      if (container) {
+        container.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center; padding: 12px;">Todas as notificações foram limpas.</p>';
+      }
+    });
+  }
+
+  function generateDynamicNotifications() {
+    const container = document.getElementById('alerts-feed-container');
+    if (!container) return;
+
+    if (dismissedAlerts.has('ALL_CLEARED')) {
+      container.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center; padding: 12px;">Todas as notificações foram limpas.</p>';
+      return;
+    }
+
+    container.innerHTML = '';
+
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    let overdueCount = 0;
+    let staleActiveCount = 0;
+    let newThisWeekCount = 0;
+    let activeDeliveriesCount = 0;
+
+    subscribers.forEach(sub => {
+      // Overdue
+      if (sub.asaas && sub.asaas.status === 'OVERDUE') {
+        overdueCount++;
+      }
+
+      // Stale active (>45 days since last payment)
+      if (sub.statusAssinatura === 'Ativo' && sub.asaas) {
+        const rawDate = sub.asaas.paymentDate || sub.asaas.confirmedDate || sub.asaas.dueDate;
+        if (rawDate) {
+          const pDate = new Date(rawDate.includes('T') ? rawDate : rawDate + 'T12:00:00');
+          const daysDiff = (now.getTime() - pDate.getTime()) / (1000 * 3600 * 24);
+          if (daysDiff > 45) {
+            staleActiveCount++;
+          }
+        }
+      }
+
+      // New this week
+      if (sub.dataHora) {
+        const regDate = new Date(sub.dataHora);
+        if (!isNaN(regDate.getTime()) && regDate >= sevenDaysAgo) {
+          newThisWeekCount++;
+        }
+      }
+
+      // Active deliveries
+      if (sub.statusAssinatura === 'Ativo') {
+        activeDeliveriesCount++;
+      }
+    });
+
+    const alerts = [];
+
+    if (overdueCount > 0 && !dismissedAlerts.has('overdue')) {
+      alerts.push({
+        id: 'overdue',
+        type: 'danger',
+        icon: 'alert-circle',
+        title: 'Cobranças Atrasadas no Asaas',
+        text: `Existe(m) ${overdueCount} cliente(s) com cobrança vencida/atrasada no Asaas.`
+      });
+    }
+
+    if (staleActiveCount > 0 && !dismissedAlerts.has('stale')) {
+      alerts.push({
+        id: 'stale',
+        type: 'warning',
+        icon: 'clock',
+        title: 'Assinaturas Ativas sem Renovação Recente',
+        text: `${staleActiveCount} cliente(s) ativo(s) possuem último pagamento há mais de 45 dias. Verifique a renovação.`
+      });
+    }
+
+    if (newThisWeekCount > 0 && !dismissedAlerts.has('new')) {
+      alerts.push({
+        id: 'new',
+        type: 'info',
+        icon: 'user-plus',
+        title: 'Novas Inscrições na Semana',
+        text: `${newThisWeekCount} novo(s) cliente(s) se cadastraram nos últimos 7 dias!`
+      });
+    }
+
+    if (activeDeliveriesCount > 0 && !dismissedAlerts.has('deliveries')) {
+      alerts.push({
+        id: 'deliveries',
+        type: 'info',
+        icon: 'truck',
+        title: 'Entregas da Semana Organizadas',
+        text: `Total de ${activeDeliveriesCount} cestas ativas preparadas para entrega.`
+      });
+    }
+
+    if (alerts.length === 0) {
+      container.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center; padding: 12px;">Nenhuma notificação pendente no momento.</p>';
+      return;
+    }
+
+    alerts.forEach(item => {
+      const div = document.createElement('div');
+      div.className = `alert-box-item ${item.type}`;
+      div.innerHTML = `
+        <i data-lucide="${item.icon}"></i>
+        <div>
+          <strong>${item.title}</strong>
+          <p>${item.text}</p>
+        </div>
+        <button class="btn-dismiss-alert" data-id="${item.id}" title="Dispensar notificação">&times;</button>
+      `;
+
+      div.querySelector('.btn-dismiss-alert').addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissedAlerts.add(item.id);
+        div.remove();
+        if (container.children.length === 0) {
+          container.innerHTML = '<p style="color: var(--color-text-secondary); font-size: 13px; text-align: center; padding: 12px;">Nenhuma notificação pendente no momento.</p>';
+        }
+      });
+
+      container.appendChild(div);
+    });
+
+    if (window.lucide) window.lucide.createIcons();
   }
 
   // ==========================================================================

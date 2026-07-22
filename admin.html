@@ -218,22 +218,14 @@
           <!-- Cards de Avisos e Produtores -->
           <div class="dashboard-grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px;">
             <div class="form-section-column">
-              <h3><i data-lucide="bell"></i> Avisos & Lembretes Importantes</h3>
-              <div class="alerts-feed">
-                <div class="alert-box-item warning">
-                  <i data-lucide="alert-triangle"></i>
-                  <div>
-                    <strong>Faturas em Aberto</strong>
-                    <p>Confira a aba de Clientes para acompanhar as cobranças pendentes do mês.</p>
-                  </div>
-                </div>
-                <div class="alert-box-item info">
-                  <i data-lucide="truck"></i>
-                  <div>
-                    <strong>Organização das Entregas</strong>
-                    <p>Acesse a tela "Entregas & Cestas" para imprimir o roteiro de entrega da semana.</p>
-                  </div>
-                </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--color-primary-light); padding-bottom: 8px; margin-bottom: 12px;">
+                <h3 style="border: none !important; margin: 0 !important; padding: 0 !important;"><i data-lucide="bell"></i> Avisos & Notificações Automáticas</h3>
+                <button id="btn-clear-alerts" style="background: transparent; border: none; color: var(--color-text-secondary); font-size: 11.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                  <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i> Limpar Todas
+                </button>
+              </div>
+              <div class="alerts-feed" id="alerts-feed-container">
+                <!-- Preenchido dinamicamente via JS -->
               </div>
             </div>
 
@@ -291,12 +283,11 @@
                   <th>Cesta / Opcionais</th>
                   <th>Produtor / Dia</th>
                   <th>Horário / Obs</th>
-                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody id="deliveries-table-body">
                 <tr>
-                  <td colspan="6" class="table-loading">Carregando entregas da semana...</td>
+                  <td colspan="5" class="table-loading">Carregando entregas da semana...</td>
                 </tr>
               </tbody>
             </table>
@@ -330,12 +321,11 @@
                   <th>Produtor / Dia</th>
                   <th>Faturamento</th>
                   <th>Status</th>
-                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody id="table-body">
                 <tr>
-                  <td colspan="6" class="table-loading">Carregando lista de clientes...</td>
+                  <td colspan="5" class="table-loading">Carregando lista de clientes...</td>
                 </tr>
               </tbody>
             </table>

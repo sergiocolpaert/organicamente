@@ -251,15 +251,28 @@ export default async function handler(req, res) {
           asaasInfo = await fetchIndividualAsaasStatus(cpfClean, row.produtor);
         }
 
-        // Determinação do status interno de assinatura (promovido de forma dinâmica no retorno)
+        // Determinação do status interno de assinatura (promovido de forma dinâmica se houver pagamento RECENTE)
         let statusAssinatura = row.statusAssinatura || '';
-        const isPaidInAsaas = asaasInfo && (asaasInfo.status === 'RECEIVED' || asaasInfo.status === 'CONFIRMED');
+        
+        let isRecentPaidInAsaas = false;
+        if (asaasInfo && (asaasInfo.status === 'RECEIVED' || asaasInfo.status === 'CONFIRMED')) {
+          const rawPaymentDate = asaasInfo.paymentDate || asaasInfo.confirmedDate || asaasInfo.dueDate;
+          if (rawPaymentDate) {
+            const pDate = new Date(rawPaymentDate.includes('T') ? rawPaymentDate : rawPaymentDate + 'T12:00:00');
+            const now = new Date();
+            const daysDiff = (now.getTime() - pDate.getTime()) / (1000 * 3600 * 24);
+            // Só considera pagamento recente se ocorreu nos últimos 45 dias
+            if (daysDiff <= 45) {
+              isRecentPaidInAsaas = true;
+            }
+          }
+        }
 
         if (!statusAssinatura) {
           // Se não há status na planilha (registro legado/antigo)
-          statusAssinatura = isPaidInAsaas ? 'Ativo' : 'Pendente';
-        } else if (statusAssinatura === 'Pendente' && isPaidInAsaas) {
-          // Se está Pendente na planilha mas foi pago no Asaas, promove para Ativo dinamicamente
+          statusAssinatura = isRecentPaidInAsaas ? 'Ativo' : 'Pendente';
+        } else if (statusAssinatura === 'Pendente' && isRecentPaidInAsaas) {
+          // Se está Pendente na planilha mas foi pago RECENTEMENTE no Asaas, promove para Ativo
           statusAssinatura = 'Ativo';
         }
 
