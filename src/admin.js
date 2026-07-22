@@ -1109,8 +1109,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       container.appendChild(div);
     });
-
-    if (window.lucide) window.lucide.createIcons();
   }
 
   // ==========================================================================
@@ -1118,17 +1116,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   
   function openDetailsModal(sub) {
+    if (!sub || !detailsModal) return;
     selectedSubscriber = sub;
-    modalClientName.textContent = sub.nome;
+    if (modalClientName) modalClientName.textContent = sub.nome || 'Cliente';
 
     // Reset para modo visualização
     exitEditMode();
 
     // Reset de abas
-    modalTabButtons.forEach(btn => btn.classList.remove('active'));
-    modalTabButtons[0].classList.add('active');
-    modalBodies.forEach(body => body.classList.remove('active-tab'));
-    modalBodies[0].classList.add('active-tab');
+    if (modalTabButtons && modalTabButtons.length > 0) {
+      modalTabButtons.forEach(btn => btn.classList.remove('active'));
+      modalTabButtons[0].classList.add('active');
+    }
+    if (modalBodies && modalBodies.length > 0) {
+      modalBodies.forEach(body => body.classList.remove('active-tab'));
+      modalBodies[0].classList.add('active-tab');
+    }
 
     // Badges dos 2 Status (Assinatura e Financeiro)
     const assInfo = getStatusAssinaturaInfo(sub);
@@ -1150,34 +1153,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Dados Pessoais
-    mCpf.textContent = formatCPF(sub.cpf);
-    mEmail.textContent = sub.email;
-    mTelefone.textContent = formatPhone(sub.telefone);
-    mDataHora.textContent = sub.dataHora ? new Date(sub.dataHora).toLocaleString('pt-BR') : 'Não informada';
+    if (mCpf) mCpf.textContent = formatCPF(sub.cpf || '');
+    if (mEmail) mEmail.textContent = sub.email || '';
+    if (mTelefone) mTelefone.textContent = formatPhone(sub.telefone || '');
+    if (mDataHora) mDataHora.textContent = sub.dataHora ? new Date(sub.dataHora).toLocaleString('pt-BR') : 'Não informada';
 
     // Detalhes Cesta
-    mCesta.textContent = sub.cestaTipo + ' (' + sub.cestaValor + ')';
-    mOvos.textContent = sub.ovosTipo + ' (' + sub.ovosValor + ')';
-    mProdutor.textContent = sub.produtor;
-    mDiaEntrega.textContent = sub.diaEntrega;
+    if (mCesta) mCesta.textContent = (sub.cestaTipo || '') + ' (' + (sub.cestaValor || '') + ')';
+    if (mOvos) mOvos.textContent = (sub.ovosTipo || '') + ' (' + (sub.ovosValor || '') + ')';
+    if (mProdutor) mProdutor.textContent = sub.produtor || 'Bruno';
+    if (mDiaEntrega) mDiaEntrega.textContent = sub.diaEntrega || '';
 
     // Logística
-    mEndereco.textContent = sub.endereco;
-    mBairroRegiao.textContent = `${sub.bairro} / ${sub.regiao}`;
-    mCep.textContent = formatCEP(sub.cep);
-    mReferencia.textContent = sub.pontoReferencia || 'Não informado';
-    mHorario.textContent = sub.horario || 'Horário Comercial';
-    mVizinho.textContent = sub.vizinho || 'Deixar no local';
+    if (mEndereco) mEndereco.textContent = sub.endereco || '';
+    if (mBairroRegiao) mBairroRegiao.textContent = `${sub.bairro || ''} / ${sub.regiao || ''}`;
+    if (mCep) mCep.textContent = formatCEP(sub.cep || '');
+    if (mReferencia) mReferencia.textContent = sub.pontoReferencia || 'Não informado';
+    if (mHorario) mHorario.textContent = sub.horario || 'Horário Comercial';
+    if (mVizinho) mVizinho.textContent = sub.vizinho || 'Deixar no local';
 
     // Financeiro
-    mTotalMensal.textContent = sub.totalMensal;
-    mPrimeiroPagamento.textContent = sub.primeiroPagamento;
-    mFormaPagamento.textContent = sub.formaPagamento || 'PIX';
+    if (mTotalMensal) mTotalMensal.textContent = sub.totalMensal || '';
+    if (mPrimeiroPagamento) mPrimeiroPagamento.textContent = sub.primeiroPagamento || '';
+    if (mFormaPagamento) mFormaPagamento.textContent = sub.formaPagamento || 'PIX';
     
-    if (sub.asaas && sub.asaas.dueDate) {
-      mVencimento.textContent = new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR');
-    } else {
-      mVencimento.textContent = 'Não gerado';
+    if (mVencimento) {
+      mVencimento.textContent = (sub.asaas && sub.asaas.dueDate) ? new Date(sub.asaas.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'Não gerado';
     }
 
     // LTV e Contagem de Mensalidades
@@ -1203,13 +1204,15 @@ document.addEventListener('DOMContentLoaded', () => {
         asaasLabel = 'Cliente no Asaas, sem cobrança ativa.';
       }
     }
-    mAsaasStatus.textContent = asaasLabel;
+    if (mAsaasStatus) mAsaasStatus.textContent = asaasLabel;
 
-    if (sub.asaas && sub.asaas.invoiceUrl) {
-      mRowInvoice.classList.remove('hidden');
-      mLinkFatura.href = sub.asaas.invoiceUrl;
-    } else {
-      mRowInvoice.classList.add('hidden');
+    if (mRowInvoice && mLinkFatura) {
+      if (sub.asaas && sub.asaas.invoiceUrl) {
+        mRowInvoice.classList.remove('hidden');
+        mLinkFatura.href = sub.asaas.invoiceUrl;
+      } else {
+        mRowInvoice.classList.add('hidden');
+      }
     }
 
     // Tabela de Histórico de Pagamentos Asaas
@@ -1982,8 +1985,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         showToast('Assinante cadastrado com sucesso!', 'success');
-        newSubscriberModal.classList.remove('active');
-        fetchData(); // Recarrega
+        if (newSubscriberModal) newSubscriberModal.classList.remove('active');
+
+        // Adiciona imediatamente ao array local para exibição instantânea
+        subscribers.unshift(data);
+        currentFilter = 'all';
+        if (filterTabsContainer) {
+          const allTab = filterTabsContainer.querySelector('.tab-btn[data-filter="all"]');
+          if (allTab) {
+            filterTabsContainer.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            allTab.classList.add('active');
+          }
+        }
+        applyFilters();
+        calculateKpis();
+        fetchData(); // Sincroniza em segundo plano
       } catch (err) {
         console.error(err);
         showToast(`Falha no cadastro: ${err.message}`, 'error');
@@ -2603,6 +2619,92 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  // ==========================================================================
+  // LOGS DO SISTEMA & CAPTURA DE ERROS (AUDITORIA)
+  // ==========================================================================
+  const systemLogsModal = document.getElementById('system-logs-modal');
+  const btnOpenSystemLogs = document.getElementById('btn-open-system-logs');
+  const btnCloseLogsModal = document.getElementById('btn-close-logs-modal');
+  const btnRefreshLogs = document.getElementById('btn-refresh-logs');
+  const logsConsoleOutput = document.getElementById('logs-console-output');
+
+  async function fetchLogs() {
+    if (!logsConsoleOutput) return;
+    logsConsoleOutput.innerHTML = '<div style="color: #94a3b8;">Carregando logs do servidor...</div>';
+
+    try {
+      const token = localStorage.getItem('organicamente_admin_token');
+      const res = await fetch('/api/admin/logs', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.logs) {
+        if (data.logs.length === 0) {
+          logsConsoleOutput.innerHTML = '<div style="color: #64748b;">Nenhum evento registrado até o momento.</div>';
+        } else {
+          logsConsoleOutput.innerHTML = data.logs.map(l => {
+            const timeStr = new Date(l.timestamp || Date.now()).toLocaleTimeString('pt-BR');
+            let levelColor = '#38bdf8'; // INFO
+            if (l.level === 'ERROR') levelColor = '#f87171';
+            if (l.level === 'WARN') levelColor = '#fbbf24';
+            if (l.level === 'SUCCESS') levelColor = '#4ade80';
+
+            return `
+              <div style="margin-bottom: 6px; border-bottom: 1px dashed #334155; padding-bottom: 4px;">
+                <span style="color: #64748b;">[${timeStr}]</span>
+                <span style="color: ${levelColor}; font-weight: bold;">[${l.level}]</span>
+                <span style="color: #cbd5e1; font-weight: 600;">[${l.scope || 'SYSTEM'}]</span>
+                <span style="color: #f8fafc;">${l.message}</span>
+                ${l.meta && Object.keys(l.meta).length > 0 ? `<div style="color: #94a3b8; font-size: 11px; margin-left: 14px;">${JSON.stringify(l.meta)}</div>` : ''}
+              </div>
+            `;
+          }).join('');
+        }
+      } else {
+        logsConsoleOutput.innerHTML = `<div style="color: #f87171;">Erro ao obter logs: ${data.error || 'Falha de comunicação'}</div>`;
+      }
+    } catch (err) {
+      logsConsoleOutput.innerHTML = `<div style="color: #f87171;">Erro de conexão: ${err.message}</div>`;
+    }
+  }
+
+  if (btnOpenSystemLogs) {
+    btnOpenSystemLogs.addEventListener('click', () => {
+      if (systemLogsModal) systemLogsModal.classList.add('active');
+      fetchLogs();
+    });
+  }
+
+  if (btnCloseLogsModal) {
+    btnCloseLogsModal.addEventListener('click', () => {
+      if (systemLogsModal) systemLogsModal.classList.remove('active');
+    });
+  }
+
+  if (btnRefreshLogs) {
+    btnRefreshLogs.addEventListener('click', fetchLogs);
+  }
+
+  // Captura global de exceções não tratadas no navegador para auditoria
+  window.addEventListener('error', (event) => {
+    try {
+      const token = localStorage.getItem('organicamente_admin_token');
+      if (token) {
+        fetch('/api/admin/logs', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            level: 'ERROR',
+            scope: 'FRONTEND',
+            message: event.message || 'Exceção JS no navegador',
+            meta: { filename: event.filename, lineno: event.lineno, colno: event.colno }
+          })
+        }).catch(() => {});
+      }
+    } catch (_) {}
+  });
 
   // Checagem inicial
   checkSession();

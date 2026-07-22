@@ -494,10 +494,17 @@
               <p style="font-size: 13px; color: var(--color-text-secondary); margin-bottom: 14px;">
                 Transfira instantaneamente todos os registros da planilha Google Sheets para o banco de dados Supabase PostgreSQL.
               </p>
-              <button id="btn-migrate-supabase" type="button" class="btn-primary" style="background-color: var(--color-primary); gap: 8px;">
-                <i data-lucide="repeat"></i>
-                <span>Migrar Dados da Planilha para o Supabase</span>
-              </button>
+              <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button id="btn-migrate-supabase" type="button" class="btn-primary" style="background-color: var(--color-primary); gap: 8px;">
+                  <i data-lucide="repeat"></i>
+                  <span>Migrar Dados da Planilha para o Supabase</span>
+                </button>
+
+                <button id="btn-open-system-logs" type="button" class="btn-outline" style="gap: 8px;">
+                  <i data-lucide="file-text"></i>
+                  <span>Consultar Logs do Sistema</span>
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -1458,6 +1465,34 @@
           </button>
         </div>
       </form>
+    </div>
+  <!-- ========================================== -->
+  <!-- MODAL: LOGS DO SISTEMA (AUDITORIA)        -->
+  <!-- ========================================== -->
+  <div id="system-logs-modal" class="modal-backdrop">
+    <div class="modal-panel max-width-large">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <h2><i data-lucide="file-text"></i> Console de Logs & Auditoria</h2>
+          <p style="font-size: 13px; color: var(--color-text-secondary);">Histórico de eventos, requisições de API e erros em tempo real</p>
+        </div>
+        <button id="btn-close-logs-modal" class="btn-close-modal" type="button">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="modal-body-form" style="padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary);">Últimos 100 eventos registrados:</span>
+          <button id="btn-refresh-logs" type="button" class="btn-outline" style="padding: 4px 10px; font-size: 12px; gap: 4px;">
+            <i data-lucide="refresh-cw"></i> Atualizar Logs
+          </button>
+        </div>
+
+        <div style="background-color: #0f172a; color: #f8fafc; font-family: monospace; font-size: 12px; padding: 14px; border-radius: 8px; max-height: 400px; overflow-y: auto;" id="logs-console-output">
+          <div>Carregando logs do sistema...</div>
+        </div>
+      </div>
     </div>
   </div>
 

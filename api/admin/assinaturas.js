@@ -143,76 +143,17 @@ export default async function handler(req, res) {
         }
       }
 
-      await Promise.all([
-        fetchAsaasBatch(apiKeyBruno, 'bruno'),
-        fetchAsaasBatch(apiKeyRusso, 'russo')
+      const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 800));
+      await Promise.race([
+        Promise.all([
+          fetchAsaasBatch(apiKeyBruno, 'bruno'),
+          fetchAsaasBatch(apiKeyRusso, 'russo')
+        ]),
+        timeoutPromise
       ]);
 
-      // Helper para busca individual (fallback)
-      async function fetchIndividualAsaasStatus(cpfClean, produtorNome) {
-        const apiKey = getAsaasApiKey(produtorNome);
-        if (!apiKey) return null;
-
-        try {
-          const custRes = await fetch(`${asaasBaseUrl}/customers?cpfCnpj=${cpfClean}`, {
-            method: 'GET',
-            headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
-          });
-          if (!custRes.ok) return null;
-          const custData = await custRes.json();
-          if (!custData.data || custData.data.length === 0) return { status: 'SEM_CLIENTE', allPayments: [], totalPaid: 0, paidCount: 0 };
-
-          const customerId = custData.data[0].id;
-          const payRes = await fetch(`${asaasBaseUrl}/payments?customer=${customerId}&limit=100`, {
-            method: 'GET',
-            headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
-          });
-          if (!payRes.ok) return { status: 'SEM_COBRANCA', allPayments: [], totalPaid: 0, paidCount: 0 };
-          const payData = await payRes.json();
-          if (!payData.data || payData.data.length === 0) return { status: 'SEM_COBRANCA', allPayments: [], totalPaid: 0, paidCount: 0 };
-
-          const payments = payData.data;
-          const payment = payments[0];
-
-          let totalPaid = 0;
-          let paidCount = 0;
-          const mappedPayments = payments.map(p => {
-            const isPaid = p.status === 'RECEIVED' || p.status === 'CONFIRMED';
-            if (isPaid) {
-              totalPaid += (p.value || 0);
-              paidCount++;
-            }
-            return {
-              id: p.id,
-              status: p.status,
-              dueDate: p.dueDate,
-              value: p.value,
-              billingType: p.billingType,
-              invoiceUrl: p.invoiceUrl || p.bankSlipUrl || '',
-              paymentDate: p.paymentDate || '',
-              confirmedDate: p.confirmedDate || ''
-            };
-          });
-
-          return {
-            status: payment.status,
-            dueDate: payment.dueDate,
-            value: payment.value,
-            billingType: payment.billingType,
-            invoiceUrl: payment.invoiceUrl || payment.bankSlipUrl || '',
-            paymentDate: payment.paymentDate || '',
-            confirmedDate: payment.confirmedDate || '',
-            allPayments: mappedPayments,
-            totalPaid: totalPaid,
-            paidCount: paidCount
-          };
-        } catch (e) {
-          return null;
-        }
-      }
-
-      // Cruzamento
-      const responseData = await Promise.all(planData.map(async (row) => {
+      // Cruzamento rápido
+      const responseData = planData.map((row) => {
         const cpfClean = String(row.cpf || '').replace(/\D/g, '');
         const produtorLower = (row.produtor || '').toLowerCase();
         const produtorKey = produtorLower.includes('bruno') ? 'bruno' : 'russo';
@@ -260,8 +201,8 @@ export default async function handler(req, res) {
           }
         }
 
-        if (!asaasInfo && cpfClean) {
-          asaasInfo = await fetchIndividualAsaasStatus(cpfClean, row.produtor);
+        if (!asaasInfo) {
+          asaasInfo = { status: 'SEM_COBRANCA', allPayments: [], totalPaid: 0, paidCount: 0 };
         }
 
         // Determinação do status interno de assinatura (promovido de forma dinâmica se houver pagamento RECENTE)

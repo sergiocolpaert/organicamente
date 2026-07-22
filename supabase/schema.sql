@@ -57,3 +57,18 @@ CREATE POLICY "Permitir exclusao" ON subscribers FOR DELETE USING (true);
 CREATE INDEX IF NOT EXISTS idx_subscribers_cpf ON subscribers(cpf);
 CREATE INDEX IF NOT EXISTS idx_subscribers_status ON subscribers(status_assinatura);
 CREATE INDEX IF NOT EXISTS idx_subscribers_produtor ON subscribers(produtor);
+
+-- 4. Tabela de Auditoria e Logs do Sistema (Opcional)
+CREATE TABLE IF NOT EXISTS system_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    level TEXT NOT NULL,
+    scope TEXT NOT NULL,
+    message TEXT NOT NULL,
+    meta JSONB DEFAULT '{}'::jsonb
+);
+
+ALTER TABLE system_logs ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Permitir acesso aos logs" ON system_logs;
+CREATE POLICY "Permitir acesso aos logs" ON system_logs FOR ALL USING (true);
+
