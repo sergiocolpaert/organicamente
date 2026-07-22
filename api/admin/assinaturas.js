@@ -78,6 +78,9 @@ export default async function handler(req, res) {
         return res.status(200).json([]);
       }
 
+      // Filtrar linhas completamente vazias ou corrompidas (sem nome nem CPF)
+      planData = planData.filter(row => row && row.nome && String(row.nome).trim() !== '' && String(row.nome).trim() !== '-');
+
       // Buscar faturas recentes em lote do Asaas para Bruno e Russo para otimizar velocidade
       // Buscar faturas recentes em lote do Asaas para Bruno e Russo para otimizar velocidade
       let asaasCache = {
@@ -292,6 +295,12 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const data = req.body;
       data.statusAssinatura = data.statusAssinatura || 'Pendente';
+      if (!data.dataHora) {
+        data.dataHora = new Date().toISOString();
+      }
+      const prodLower = (data.produtor || '').toLowerCase();
+      data.produtor = prodLower.includes('russo') ? 'Russo' : 'Bruno';
+
       if (!data.nome || !data.email || !data.telefone || !data.cpf || !data.cep || !data.endereco || !data.bairro || !data.produtor) {
         return res.status(400).json({ error: 'Parâmetros obrigatórios ausentes para cadastro.' });
       }

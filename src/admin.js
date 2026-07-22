@@ -475,6 +475,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tableBody.innerHTML = '';
 
     filteredSubscribers.forEach((sub) => {
+      if (!sub || !sub.nome || String(sub.nome).trim() === '' || String(sub.nome).trim() === '-') return;
+
       const initials = (sub.nome || 'U')
         .split(' ')
         .slice(0, 2)
