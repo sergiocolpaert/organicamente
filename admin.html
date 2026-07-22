@@ -978,8 +978,15 @@
           </div>
 
           <div class="form-group" style="margin-top: 12px;">
-            <label for="new-comoConheceu">Como Conheceu a Organicamente?</label>
-            <input type="text" id="new-comoConheceu" placeholder="Ex: Instagram, Indicação de Amigo, Evento">
+            <label for="new-comoConheceu">Como Conheceu a Organicamente? *</label>
+            <select id="new-comoConheceu" required>
+              <option value="" disabled selected>Selecione uma opção...</option>
+              <option value="Indicação de amigo/familiar">Indicação de amigo/familiar</option>
+              <option value="Instagram / Redes Sociais">Instagram / Redes Sociais</option>
+              <option value="Evento ou Feira local">Evento ou Feira local</option>
+              <option value="Google ou Pesquisa Web">Google ou Pesquisa Web</option>
+              <option value="Outros meios">Outros meios</option>
+            </select>
           </div>
         </div>
 
@@ -988,20 +995,20 @@
           <h3 style="margin-bottom: 16px;"><i data-lucide="map-pin"></i> Etapa 2: Endereço para Entrega</h3>
           
           <div class="form-group-row">
-            <div class="form-group flex-2">
-              <label for="new-endereco">Endereço Completo *</label>
-              <input type="text" id="new-endereco" required placeholder="Rua, número, apartamento/bloco">
-            </div>
             <div class="form-group flex-1">
-              <label for="new-cep">CEP *</label>
-              <input type="text" id="new-cep" required placeholder="00000-000">
+              <label for="new-cep">CEP * <span id="cep-loading-spinner" class="hidden" style="font-size: 11px; color: var(--color-primary-light); font-weight: normal;">(Buscando endereço...)</span></label>
+              <input type="text" id="new-cep" required placeholder="00000-000" maxlength="9">
+            </div>
+            <div class="form-group flex-2">
+              <label for="new-bairro">Bairro *</label>
+              <input type="text" id="new-bairro" required placeholder="Ex: Botafogo">
             </div>
           </div>
 
           <div class="form-group-row" style="margin-top: 12px;">
-            <div class="form-group flex-1">
-              <label for="new-bairro">Bairro *</label>
-              <input type="text" id="new-bairro" required placeholder="Ex: Botafogo">
+            <div class="form-group flex-2">
+              <label for="new-endereco">Endereço Completo (Rua, nº, apto) *</label>
+              <input type="text" id="new-endereco" required placeholder="Rua, número, complemento">
             </div>
             <div class="form-group flex-1">
               <label for="new-regiao">Região *</label>
@@ -1323,6 +1330,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Container de Notificações Toast Nativas -->
+  <div id="toast-container" class="toast-container"></div>
 
   <!-- Scripts -->
   <script type="module" src="/src/admin.js"></script>

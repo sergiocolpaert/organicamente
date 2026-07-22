@@ -37,10 +37,46 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('admin-search-input');
   const clearSearchBtn = document.getElementById('clear-search-btn');
   const filterTabsContainer = document.getElementById('filter-tabs-container');
-  const tableRowsCount = document.getElementById('table-rows-count');
   const btnRefresh = document.getElementById('btn-refresh');
 
-  // Lógica de Navegação Multi-telas (Sidebar Navigation)
+  // ==========================================================================
+  // SISTEMA DE TOAST NOTIFICATIONS NATIVAS
+  // ==========================================================================
+  function showToast(message, type = 'error') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast-item ${type}`;
+
+    let iconName = 'alert-circle';
+    if (type === 'success') iconName = 'check-circle';
+    if (type === 'warning') iconName = 'alert-triangle';
+
+    toast.innerHTML = `
+      <i data-lucide="${iconName}"></i>
+      <span>${message}</span>
+      <button class="toast-close">&times;</button>
+    `;
+
+    const closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', () => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateX(40px)';
+      setTimeout(() => toast.remove(), 300);
+    });
+
+    container.appendChild(toast);
+    if (window.lucide) window.lucide.createIcons();
+
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(40px)';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 4500);
+  }
   const navItems = document.querySelectorAll('.nav-item');
   const appViews = document.querySelectorAll('.app-view');
   const pageTitle = document.getElementById('page-title');
@@ -1424,15 +1460,103 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) window.lucide.createIcons();
   }
 
+  // Máscaras de Entrada Automáticas
+  function applyMasks() {
+    const cpfInputs = document.querySelectorAll('#new-cpf, #edit-cpf');
+    cpfInputs.forEach(input => {
+      input.addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d)/, '$1.$2');
+        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        e.target.value = v;
+      });
+    });
+
+    const cepInputs = document.querySelectorAll('#new-cep, #edit-cep');
+    cepInputs.forEach(input => {
+      input.addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length > 8) v = v.slice(0, 8);
+        v = v.replace(/^(\d{5})(\d)/, '$1-$2');
+        e.target.value = v;
+      });
+    });
+
+    const phoneInputs = document.querySelectorAll('#new-telefone, #edit-telefone');
+    phoneInputs.forEach(input => {
+      input.addEventListener('input', (e) => {
+        let v = e.target.value.replace(/\D/g, '');
+        if (v.length > 11) v = v.slice(0, 11);
+        if (v.length <= 10) {
+          v = v.replace(/^(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+        } else {
+          v = v.replace(/^(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+        }
+        e.target.value = v;
+      });
+    });
+  }
+
+  applyMasks();
+
+  // Autocompletar CEP via ViaCEP API
+  const newCepInput = document.getElementById('new-cep');
+  const cepSpinner = document.getElementById('cep-loading-spinner');
+
+  if (newCepInput) {
+    let lastFetchedCep = '';
+    const fetchAddress = async () => {
+      const cepClean = newCepInput.value.replace(/\D/g, '');
+      if (cepClean.length === 8 && cepClean !== lastFetchedCep) {
+        lastFetchedCep = cepClean;
+        if (cepSpinner) cepSpinner.classList.remove('hidden');
+        try {
+          const res = await fetch(`https://viacep.com.br/ws/${cepClean}/json/`);
+          const data = await res.json();
+          if (data.erro) {
+            showToast('CEP não encontrado. Verifique o número digitado.', 'warning');
+          } else {
+            const endInput = document.getElementById('new-endereco');
+            const bairroInput = document.getElementById('new-bairro');
+            const regiaoInput = document.getElementById('new-regiao');
+
+            if (bairroInput && data.bairro) bairroInput.value = data.bairro;
+            if (endInput && data.logradouro) {
+              endInput.value = data.logradouro;
+              endInput.focus();
+            }
+            if (regiaoInput) {
+              regiaoInput.value = `${data.localidade} / ${data.uf}`;
+            }
+            showToast('Endereço localizado e preenchido automaticamente!', 'success');
+          }
+        } catch (err) {
+          console.error('Erro ViaCEP:', err);
+        } finally {
+          if (cepSpinner) cepSpinner.classList.add('hidden');
+        }
+      }
+    };
+
+    newCepInput.addEventListener('blur', fetchAddress);
+    newCepInput.addEventListener('input', (e) => {
+      const clean = e.target.value.replace(/\D/g, '');
+      if (clean.length === 8) fetchAddress();
+    });
+  }
+
   function validateWizardStep(step) {
     if (step === 1) {
       const nome = document.getElementById('new-nome').value.trim();
       const cpf = document.getElementById('new-cpf').value.trim();
       const email = document.getElementById('new-email').value.trim();
       const telefone = document.getElementById('new-telefone').value.trim();
+      const comoConheceu = document.getElementById('new-comoConheceu').value;
 
-      if (!nome || !cpf || !email || !telefone) {
-        alert('Por favor, preencha todos os campos obrigatórios da Etapa 1 (Nome, CPF, E-mail e WhatsApp).');
+      if (!nome || !cpf || !email || !telefone || !comoConheceu) {
+        showToast('Preencha os campos obrigatórios da Etapa 1 (Nome, CPF, E-mail, Telefone e Como Conheceu).', 'warning');
         return false;
       }
     } else if (step === 2) {
@@ -1442,7 +1566,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const regiao = document.getElementById('new-regiao').value.trim();
 
       if (!endereco || !cep || !bairro || !regiao) {
-        alert('Por favor, preencha os campos obrigatórios de endereço (Endereço, CEP, Bairro e Região).');
+        showToast('Preencha os campos obrigatórios de endereço (CEP, Bairro, Endereço e Região).', 'warning');
         return false;
       }
     }
@@ -1604,12 +1728,12 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(errData.error || 'Erro ao cadastrar novo assinante.');
         }
 
-        alert('Assinante cadastrado com sucesso!');
+        showToast('Assinante cadastrado com sucesso!', 'success');
         newSubscriberModal.classList.remove('active');
         fetchData(); // Recarrega
       } catch (err) {
         console.error(err);
-        alert(`Falha no cadastro: ${err.message}`);
+        showToast(`Falha no cadastro: ${err.message}`, 'error');
       } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;
@@ -1734,7 +1858,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const isInactiveOrCancelled = statusAssinaturaVal === 'Inativo' || statusAssinaturaVal === 'Cancelado';
 
       if (isInactiveOrCancelled && editMotivoCancelamento && !editMotivoCancelamento.value) {
-        alert('Por favor, selecione um motivo para o cancelamento/inativação.');
+        showToast('Por favor, selecione um motivo para o cancelamento/inativação.', 'warning');
         editMotivoCancelamento.focus();
         return;
       }
@@ -1805,7 +1929,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(errData.error || 'Erro ao salvar alterações.');
         }
 
-        alert('Cadastro atualizado com sucesso!');
+        showToast('Cadastro atualizado com sucesso!', 'success');
         
         // Atualiza objeto local e tabela imediatamente
         selectedSubscriber = {
@@ -1828,7 +1952,7 @@ document.addEventListener('DOMContentLoaded', () => {
         calculateKpis();
       } catch (err) {
         console.error(err);
-        alert(`Falha na atualização: ${err.message}`);
+        showToast(`Falha na atualização: ${err.message}`, 'error');
       } finally {
         btnEditSave.disabled = false;
         btnEditSave.innerHTML = originalText;
@@ -1888,7 +2012,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(errData.error || 'Erro ao excluir assinante.');
         }
 
-        alert('Assinante excluído com sucesso!');
+        showToast('Assinante excluído com sucesso!', 'success');
         
         // Remove do array principal
         subscribers = subscribers.filter(s => s.cpf !== cpfToDelete);
@@ -1902,7 +2026,7 @@ document.addEventListener('DOMContentLoaded', () => {
         calculateKpis();
       } catch (err) {
         console.error(err);
-        alert(`Falha na exclusão: ${err.message}`);
+        showToast(`Falha na exclusão: ${err.message}`, 'error');
       } finally {
         btnDeleteConfirm.disabled = false;
         btnDeleteConfirm.textContent = 'Sim, Excluir';
