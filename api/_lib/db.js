@@ -227,25 +227,62 @@ export async function createSubscriberInSupabase(data) {
 }
 
 export async function updateSubscriberInSupabase(cpf, data) {
-  const rawCpf = String(cpf || '');
+  const rawCpf = String(cpf || '').trim();
   const cleanCpf = rawCpf.replace(/\D/g, '');
   const payload = mapRowToSupabase(data);
 
-  // Buscar por CPF limpo ou formatado com pontuação
-  const query = `/subscribers?or=(cpf.eq.${cleanCpf},cpf.eq.${encodeURIComponent(rawCpf)})`;
-  const rows = await supabaseFetch(query, {
+  // 1. Tentar atualizar por CPF numérico limpo
+  let rows = await supabaseFetch(`/subscribers?cpf=eq.${cleanCpf}`, {
     method: 'PATCH',
     headers: { 'Prefer': 'return=representation' },
     body: JSON.stringify(payload)
   });
-  return mapRowFromSupabase(rows ? rows[0] : payload);
+
+  // 2. Se 0 linhas afetadas, tentar por CPF bruto (com pontuação)
+  if (!rows || rows.length === 0) {
+    rows = await supabaseFetch(`/subscribers?cpf=eq.${encodeURIComponent(rawCpf)}`, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  // 3. Se ainda 0 linhas afetadas, tentar por ilike (contendo números do CPF)
+  if (!rows || rows.length === 0) {
+    rows = await supabaseFetch(`/subscribers?cpf=ilike.*${cleanCpf}*`, {
+      method: 'PATCH',
+      headers: { 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    });
+  }
+
+  return mapRowFromSupabase(rows && rows.length > 0 ? rows[0] : payload);
 }
 
 export async function deleteSubscriberInSupabase(cpf) {
-  const rawCpf = String(cpf || '');
+  const rawCpf = String(cpf || '').trim();
   const cleanCpf = rawCpf.replace(/\D/g, '');
-  await supabaseFetch(`/subscribers?or=(cpf.eq.${cleanCpf},cpf.eq.${encodeURIComponent(rawCpf)})`, {
-    method: 'DELETE'
+
+  // 1. Tentar por CPF limpo
+  let rows = await supabaseFetch(`/subscribers?cpf=eq.${cleanCpf}`, {
+    method: 'DELETE',
+    headers: { 'Prefer': 'return=representation' }
   });
+
+  // 2. Se 0 linhas, tentar por CPF bruto
+  if (!rows || rows.length === 0) {
+    rows = await supabaseFetch(`/subscribers?cpf=eq.${encodeURIComponent(rawCpf)}`, {
+      method: 'DELETE',
+      headers: { 'Prefer': 'return=representation' }
+    });
+  }
+
+  // 3. Se 0 linhas, tentar por ilike
+  if (!rows || rows.length === 0) {
+    await supabaseFetch(`/subscribers?cpf=ilike.*${cleanCpf}*`, {
+      method: 'DELETE'
+    });
+  }
+
   return true;
 }

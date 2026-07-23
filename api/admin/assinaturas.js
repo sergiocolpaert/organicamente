@@ -108,56 +108,57 @@ export default async function handler(req, res) {
       async function fetchAsaasBatch(apiKey, produtorKey) {
         if (!apiKey) return;
         try {
-          // Clientes
-          const custRes = await fetch(`${asaasBaseUrl}/customers?limit=100`, {
-            method: 'GET',
-            headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
-          });
-          if (custRes.ok) {
-            const custData = await custRes.json();
-            if (custData.data) {
-              custData.data.forEach(c => {
-                if (c.cpfCnpj) {
-                  const cleanCpf = c.cpfCnpj.replace(/\D/g, '');
-                  asaasCache[produtorKey].customersByCpf[cleanCpf] = c;
-                }
-              });
-            }
+          // Clientes (até 200 registros)
+          for (const offset of [0, 100]) {
+            const custRes = await fetch(`${asaasBaseUrl}/customers?limit=100&offset=${offset}`, {
+              method: 'GET',
+              headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
+            });
+            if (custRes.ok) {
+              const custData = await custRes.json();
+              if (custData.data && custData.data.length > 0) {
+                custData.data.forEach(c => {
+                  if (c.cpfCnpj) {
+                    const cleanCpf = c.cpfCnpj.replace(/\D/g, '');
+                    asaasCache[produtorKey].customersByCpf[cleanCpf] = c;
+                  }
+                });
+              } else break;
+            } else break;
           }
-          // Cobranças
-          const payRes = await fetch(`${asaasBaseUrl}/payments?limit=100`, {
-            method: 'GET',
-            headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
-          });
-          if (payRes.ok) {
-            const payData = await payRes.json();
-            if (payData.data) {
-              payData.data.forEach(p => {
-                if (p.customer) {
-                  if (!asaasCache[produtorKey].allPaymentsByCustomerId[p.customer]) {
-                    asaasCache[produtorKey].allPaymentsByCustomerId[p.customer] = [];
+
+          // Cobranças (até 200 registros)
+          for (const offset of [0, 100]) {
+            const payRes = await fetch(`${asaasBaseUrl}/payments?limit=100&offset=${offset}`, {
+              method: 'GET',
+              headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
+            });
+            if (payRes.ok) {
+              const payData = await payRes.json();
+              if (payData.data && payData.data.length > 0) {
+                payData.data.forEach(p => {
+                  if (p.customer) {
+                    if (!asaasCache[produtorKey].allPaymentsByCustomerId[p.customer]) {
+                      asaasCache[produtorKey].allPaymentsByCustomerId[p.customer] = [];
+                    }
+                    asaasCache[produtorKey].allPaymentsByCustomerId[p.customer].push(p);
+                    if (!asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer]) {
+                      asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer] = p;
+                    }
                   }
-                  asaasCache[produtorKey].allPaymentsByCustomerId[p.customer].push(p);
-                  if (!asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer]) {
-                    asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer] = p;
-                  }
-                }
-              });
-            }
+                });
+              } else break;
+            } else break;
           }
         } catch (err) {
           console.error(`Erro ao carregar lote do Asaas para ${produtorKey}:`, err);
         }
       }
 
-      const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 800));
-      await Promise.race([
-        Promise.all([
-          fetchAsaasBatch(apiKeyBruno, 'bruno'),
-          fetchAsaasBatch(apiKeyRusso, 'russo')
-        ]),
-        timeoutPromise
-      ]);
+      await Promise.all([
+        fetchAsaasBatch(apiKeyBruno, 'bruno'),
+        fetchAsaasBatch(apiKeyRusso, 'russo')
+      ]).catch(err => console.error('Erro no carregamento Asaas:', err));
 
       // Cruzamento rápido
       const responseData = planData.map((row) => {

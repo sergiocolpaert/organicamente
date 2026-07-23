@@ -874,6 +874,40 @@ tr:hover td {
   transition: opacity var(--transition-normal);
 }
 
+/* WhatsApp Badge Button */
+.whatsapp-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-whatsapp-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #25d366;
+  color: #ffffff !important;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 14px;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.btn-whatsapp-icon:hover {
+  background-color: #1da851;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.35);
+}
+
+.btn-whatsapp-icon svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+}
+
 .modal-backdrop.active {
   display: flex !important;
   opacity: 1;

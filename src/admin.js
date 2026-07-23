@@ -2666,6 +2666,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Listener para o Botão de Teste de Conexão Supabase
+  const btnTestSupabase = document.getElementById('btn-test-supabase');
+  if (btnTestSupabase) {
+    btnTestSupabase.addEventListener('click', async () => {
+      btnTestSupabase.disabled = true;
+      const originalText = btnTestSupabase.innerHTML;
+      btnTestSupabase.innerHTML = '<span>Testando...</span>';
+
+      try {
+        const token = localStorage.getItem('organicamente_admin_token');
+        const res = await fetch('/api/admin/test-supabase', {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          const r = data.report || {};
+          const selOk = r.tests?.select?.success ? 'Leitura OK' : 'Falha Leitura';
+          const updOk = r.tests?.update?.success ? 'Escrita/Update OK' : (r.tests?.update?.error || 'Falha Escrita');
+          showToast(`Supabase Conectado! [${selOk} | ${updOk}]`, r.tests?.update?.success ? 'success' : 'warning');
+        } else {
+          showToast(data.error || 'Falha ao testar conexão com o Supabase.', 'error');
+        }
+      } catch (err) {
+        console.error('Erro no teste Supabase:', err);
+        showToast('Erro ao se comunicar com o Supabase.', 'error');
+      } finally {
+        btnTestSupabase.disabled = false;
+        btnTestSupabase.innerHTML = originalText;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  }
+
   // ==========================================================================
   // LOGS DO SISTEMA & CAPTURA DE ERROS (AUDITORIA)
   // ==========================================================================
