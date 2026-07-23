@@ -89,7 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'view-customers': { title: 'Clientes', subtitle: 'Gerencie a base de clientes, fichas e pagamentos' },
     'view-reports': { title: 'Relatórios Executivos', subtitle: 'Análise completa de desempenho, retenção e balanço da comunidade' },
     'view-churn': { title: 'Relatórios Executivos', subtitle: 'Análise completa de desempenho, retenção e balanço da comunidade' },
-    'view-settings': { title: 'Ajustes', subtitle: 'Configurações gerais e segurança do sistema' }
+    'view-settings': { title: 'Ajustes', subtitle: 'Configurações gerais e segurança do sistema' },
+    'view-system-logs': { title: 'Logs do Sistema & Auditoria', subtitle: 'Histórico de eventos, requisições de API e erros em tempo real' }
   };
 
   function switchView(viewId) {
@@ -120,6 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderReportsView();
     } else if (viewId === 'view-deliveries') {
       renderDeliveriesView();
+    } else if (viewId === 'view-system-logs') {
+      fetchLogs();
     }
 
     if (window.lucide) window.lucide.createIcons();
@@ -2670,25 +2673,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  const sidebarBtnLogs = document.getElementById('sidebar-btn-logs');
+  const btnBackToSettings = document.getElementById('btn-back-to-settings');
 
   if (btnOpenSystemLogs) {
     btnOpenSystemLogs.addEventListener('click', () => {
-      if (systemLogsModal) systemLogsModal.classList.add('active');
-      fetchLogs();
+      switchView('view-system-logs');
     });
   }
 
-  if (sidebarBtnLogs) {
-    sidebarBtnLogs.addEventListener('click', () => {
-      if (systemLogsModal) systemLogsModal.classList.add('active');
-      fetchLogs();
-    });
-  }
-
-  if (btnCloseLogsModal) {
-    btnCloseLogsModal.addEventListener('click', () => {
-      if (systemLogsModal) systemLogsModal.classList.remove('active');
+  if (btnBackToSettings) {
+    btnBackToSettings.addEventListener('click', () => {
+      switchView('view-settings');
     });
   }
 

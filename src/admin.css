@@ -853,7 +853,7 @@ tr:hover td {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 20;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   padding: var(--space-6);
@@ -863,6 +863,7 @@ tr:hover td {
 }
 
 .modal-backdrop.active {
+  display: flex !important;
   opacity: 1;
   pointer-events: auto;
 }
@@ -1405,6 +1406,7 @@ tr:hover td {
 }
 
 .loading-overlay.hidden {
+  display: none !important;
   opacity: 0;
   pointer-events: none;
   visibility: hidden;

@@ -126,11 +126,6 @@
           <i data-lucide="settings"></i>
           <span>Ajustes</span>
         </button>
-
-        <button class="nav-item" id="sidebar-btn-logs" style="color: var(--color-primary); font-weight: 600;">
-          <i data-lucide="file-text"></i>
-          <span>Logs do Sistema</span>
-        </button>
       </nav>
 
       <div class="sidebar-footer">
@@ -516,6 +511,29 @@
                   <span>Consultar Logs do Sistema</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TELA 6: LOGS DO SISTEMA & AUDITORIA        -->
+        <!-- ========================================== -->
+        <section id="view-system-logs" class="app-view hidden">
+          <div class="form-section-column">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+              <button id="btn-back-to-settings" type="button" class="btn-outline" style="gap: 8px;">
+                <i data-lucide="arrow-left"></i>
+                <span>Voltar para Ajustes</span>
+              </button>
+
+              <button id="btn-refresh-logs" type="button" class="btn-outline" style="gap: 8px;">
+                <i data-lucide="refresh-cw"></i>
+                <span>Atualizar Logs</span>
+              </button>
+            </div>
+
+            <div style="background-color: #0f172a; color: #f8fafc; font-family: monospace; font-size: 12.5px; padding: 20px; border-radius: 12px; min-height: 480px; max-height: 70vh; overflow-y: auto; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);" id="logs-console-output">
+              <div style="color: #94a3b8;">Carregando logs do sistema...</div>
             </div>
           </div>
         </section>
@@ -1477,36 +1495,6 @@
         </div>
       </form>
     </div>
-  <!-- ========================================== -->
-  <!-- MODAL: LOGS DO SISTEMA (AUDITORIA)        -->
-  <!-- ========================================== -->
-  <div id="system-logs-modal" class="modal-backdrop">
-    <div class="modal-panel max-width-large">
-      <div class="modal-header">
-        <div class="modal-title-area">
-          <h2><i data-lucide="file-text"></i> Console de Logs & Auditoria</h2>
-          <p style="font-size: 13px; color: var(--color-text-secondary);">Histórico de eventos, requisições de API e erros em tempo real</p>
-        </div>
-        <button id="btn-close-logs-modal" class="btn-close-modal" type="button">
-          <i data-lucide="x"></i>
-        </button>
-      </div>
-
-      <div class="modal-body-form" style="padding: 16px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <span style="font-size: 13px; font-weight: 600; color: var(--color-text-primary);">Últimos 100 eventos registrados:</span>
-          <button id="btn-refresh-logs" type="button" class="btn-outline" style="padding: 4px 10px; font-size: 12px; gap: 4px;">
-            <i data-lucide="refresh-cw"></i> Atualizar Logs
-          </button>
-        </div>
-
-        <div style="background-color: #0f172a; color: #f8fafc; font-family: monospace; font-size: 12px; padding: 14px; border-radius: 8px; max-height: 400px; overflow-y: auto;" id="logs-console-output">
-          <div>Carregando logs do sistema...</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- Container de Notificações Toast Nativas -->
   <div id="toast-container" class="toast-container"></div>
 
