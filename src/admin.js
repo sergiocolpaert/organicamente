@@ -94,23 +94,29 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   function switchView(viewId) {
-    navItems.forEach(item => {
-      if (item.getAttribute('data-view') === viewId) {
-        item.classList.add('active');
-      } else {
-        item.classList.remove('active');
-      }
-    });
+    if (navItems) {
+      navItems.forEach(item => {
+        if (!item) return;
+        if (item.getAttribute('data-view') === viewId) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
 
-    appViews.forEach(view => {
-      if (view.id === viewId) {
-        view.classList.remove('hidden');
-        view.classList.add('active-view');
-      } else {
-        view.classList.add('hidden');
-        view.classList.remove('active-view');
-      }
-    });
+    if (appViews) {
+      appViews.forEach(view => {
+        if (!view) return;
+        if (view.id === viewId) {
+          view.classList.remove('hidden');
+          view.classList.add('active-view');
+        } else {
+          view.classList.add('hidden');
+          view.classList.remove('active-view');
+        }
+      });
+    }
 
     if (viewTitles[viewId]) {
       if (pageTitle) pageTitle.textContent = viewTitles[viewId].title;
@@ -1132,12 +1138,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reset de abas
     if (modalTabButtons && modalTabButtons.length > 0) {
-      modalTabButtons.forEach(btn => btn.classList.remove('active'));
-      modalTabButtons[0].classList.add('active');
+      modalTabButtons.forEach(btn => {
+        if (btn) btn.classList.remove('active');
+      });
+      if (modalTabButtons[0]) modalTabButtons[0].classList.add('active');
     }
     if (modalBodies && modalBodies.length > 0) {
-      modalBodies.forEach(body => body.classList.remove('active-tab'));
-      modalBodies[0].classList.add('active-tab');
+      modalBodies.forEach(body => {
+        if (body) body.classList.remove('active-tab');
+      });
+      if (modalBodies[0]) modalBodies[0].classList.add('active-tab');
     }
 
     // Badges dos 2 Status (Assinatura e Financeiro)
@@ -1468,17 +1478,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const updateMotivoVis = () => {
         const val = quickStatusSelect.value;
-        if (val === 'Pausada' || val === 'Cancelada') {
-          quickStatusMotivoGroup.classList.remove('hidden');
-        } else {
-          quickStatusMotivoGroup.classList.add('hidden');
+        if (quickStatusMotivoGroup) {
+          if (val === 'Pausada' || val === 'Cancelada') {
+            quickStatusMotivoGroup.classList.remove('hidden');
+          } else {
+            quickStatusMotivoGroup.classList.add('hidden');
+          }
         }
       };
       quickStatusSelect.onchange = updateMotivoVis;
       updateMotivoVis();
     } else {
-      quickStatusTitle.textContent = 'Alterar Status Financeiro';
-      quickStatusMotivoGroup.classList.add('hidden');
+      if (quickStatusTitle) quickStatusTitle.textContent = 'Alterar Status Financeiro';
+      if (quickStatusMotivoGroup) quickStatusMotivoGroup.classList.add('hidden');
       const current = getStatusFinanceiroInfo(sub).label;
 
       ['Em Dia', 'Pendente', 'Atrasado', 'Isento'].forEach(opt => {
@@ -1491,15 +1503,19 @@ document.addEventListener('DOMContentLoaded', () => {
       quickStatusSelect.onchange = null;
     }
 
-    quickStatusModal.classList.add('active');
+    if (quickStatusModal) quickStatusModal.classList.add('active');
     if (window.lucide) window.lucide.createIcons();
   }
 
   if (btnCloseQuickStatusModal) {
-    btnCloseQuickStatusModal.addEventListener('click', () => quickStatusModal.classList.remove('active'));
+    btnCloseQuickStatusModal.addEventListener('click', () => {
+      if (quickStatusModal) quickStatusModal.classList.remove('active');
+    });
   }
   if (btnQuickStatusCancel) {
-    btnQuickStatusCancel.addEventListener('click', () => quickStatusModal.classList.remove('active'));
+    btnQuickStatusCancel.addEventListener('click', () => {
+      if (quickStatusModal) quickStatusModal.classList.remove('active');
+    });
   }
 
   if (quickStatusForm) {
@@ -1578,7 +1594,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Status alterado no painel!', 'success');
       }
 
-      quickStatusModal.classList.remove('active');
+      if (quickStatusModal) quickStatusModal.classList.remove('active');
       applyFilters();
       calculateKpis();
       if (detailsModal && detailsModal.classList.contains('active')) {
@@ -1593,24 +1609,29 @@ document.addEventListener('DOMContentLoaded', () => {
       const btn = e.target.closest('.modal-tab-btn');
       if (!btn) return;
 
-      modalTabButtons.forEach(b => b.classList.remove('active'));
+      if (modalTabButtons) {
+        modalTabButtons.forEach(b => { if (b) b.classList.remove('active'); });
+      }
       btn.classList.add('active');
 
       const targetTab = btn.getAttribute('data-tab');
-      modalBodies.forEach(body => {
-        if (body.id === targetTab) {
-          body.classList.add('active-tab');
-        } else {
-          body.classList.remove('active-tab');
-        }
-      });
+      if (modalBodies) {
+        modalBodies.forEach(body => {
+          if (!body) return;
+          if (body.id === targetTab) {
+            body.classList.add('active-tab');
+          } else {
+            body.classList.remove('active-tab');
+          }
+        });
+      }
     });
   }
 
   // Fechar Modal
   if (btnCloseModal) {
     btnCloseModal.addEventListener('click', () => {
-      detailsModal.classList.remove('active');
+      if (detailsModal) detailsModal.classList.remove('active');
     });
   }
 
@@ -1815,21 +1836,21 @@ document.addEventListener('DOMContentLoaded', () => {
     btnNewSubscriber.addEventListener('click', () => {
       currentWizardStep = 1;
       updateWizardUI();
-      newSubscriberForm.reset();
-      newSubscriberModal.classList.add('active');
+      if (newSubscriberForm) newSubscriberForm.reset();
+      if (newSubscriberModal) newSubscriberModal.classList.add('active');
       if (window.lucide) window.lucide.createIcons();
     });
   }
 
   if (btnCloseNewModal) {
     btnCloseNewModal.addEventListener('click', () => {
-      newSubscriberModal.classList.remove('active');
+      if (newSubscriberModal) newSubscriberModal.classList.remove('active');
     });
   }
 
   if (btnNewCancel) {
     btnNewCancel.addEventListener('click', () => {
-      newSubscriberModal.classList.remove('active');
+      if (newSubscriberModal) newSubscriberModal.classList.remove('active');
     });
   }
 
