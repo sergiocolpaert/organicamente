@@ -180,7 +180,40 @@ export function mapRowToSupabase(data) {
 
 export async function getSubscribersFromSupabase() {
   const rows = await supabaseFetch('/subscribers?select=*&order=data_hora.desc');
-  return (rows || []).map(mapRowFromSupabase);
+  if (!rows || !Array.isArray(rows)) return [];
+
+  // Sincronizar em background no PostgreSQL os registros com valores legados (R$ 180,00) em cestas não-família
+  for (const row of rows) {
+    if (row && row.cpf) {
+      const cestaTipo = row.cesta_tipo || 'Cesta Família';
+      const ovosTipo = row.ovos_tipo || 'Sem Ovos';
+      const baseCestaVal = calculateCestaPrice(cestaTipo);
+      const baseOvosVal = calculateOvosPrice(cestaTipo, ovosTipo);
+      const calculatedTotal = (cestaTipo.toLowerCase().includes('avulsa') ? 0 : baseCestaVal) + baseOvosVal;
+      const calculatedFirstPay = baseCestaVal + baseOvosVal + 35.0;
+
+      const formattedCestaVal = formatBrl(baseCestaVal);
+      const formattedTotal = formatBrl(calculatedTotal);
+      const formattedFirstPay = formatBrl(calculatedFirstPay);
+
+      if ((row.cesta_valor !== formattedCestaVal && !cestaTipo.toLowerCase().includes('família')) ||
+          (row.total_mensal !== formattedTotal && !cestaTipo.toLowerCase().includes('família'))) {
+        const rawCpf = String(row.cpf);
+        const cleanCpf = rawCpf.replace(/\D/g, '');
+        supabaseFetch(`/subscribers?or=(cpf.eq.${cleanCpf},cpf.eq.${encodeURIComponent(rawCpf)})`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            cesta_valor: formattedCestaVal,
+            ovos_valor: formatBrl(baseOvosVal),
+            total_mensal: formattedTotal,
+            primeiro_pagamento: formattedFirstPay
+          })
+        }).catch(() => {});
+      }
+    }
+  }
+
+  return rows.map(mapRowFromSupabase);
 }
 
 export async function createSubscriberInSupabase(data) {

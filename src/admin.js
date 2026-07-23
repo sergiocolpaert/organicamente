@@ -2067,15 +2067,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!selectedSubscriber) return;
 
     // Altera título e esconde visualização
-    modalClientName.textContent = `Editar Assinante`;
-    modalClientStatus.classList.add('hidden');
-    modalTabs.classList.add('hidden');
-    modalBodies.forEach(body => body.classList.remove('active-tab'));
+    if (modalClientName) modalClientName.textContent = `Editar Assinante`;
+    if (modalClientStatus) modalClientStatus.classList.add('hidden');
+    if (modalTabs) modalTabs.classList.add('hidden');
+    if (modalBodies) {
+      modalBodies.forEach(body => { if (body) body.classList.remove('active-tab'); });
+    }
     
     // Mostra Form de Edição e botões de edição
-    editSubscriberForm.classList.remove('hidden');
-    modalViewFooter.classList.add('hidden');
-    modalEditFooter.classList.remove('hidden');
+    if (editSubscriberForm) editSubscriberForm.classList.remove('hidden');
+    if (modalViewFooter) modalViewFooter.classList.add('hidden');
+    if (modalEditFooter) modalEditFooter.classList.remove('hidden');
 
     // Popula formulário de edição
     editOriginalCpf.value = selectedSubscriber.cpf;
@@ -2137,18 +2139,26 @@ document.addEventListener('DOMContentLoaded', () => {
   function exitEditMode() {
     if (!selectedSubscriber) return;
 
-    modalClientName.textContent = selectedSubscriber.nome;
-    modalClientStatus.classList.remove('hidden');
-    modalTabs.classList.remove('hidden');
+    if (modalClientName) modalClientName.textContent = selectedSubscriber.nome || 'Cliente';
+    if (modalClientStatus) modalClientStatus.classList.remove('hidden');
+    if (modalTabs) modalTabs.classList.remove('hidden');
     
     // Volta abas ativa
-    const activeTabId = modalTabs.querySelector('.modal-tab-btn.active').getAttribute('data-tab');
-    document.getElementById(activeTabId).classList.add('active-tab');
+    if (modalTabs) {
+      const activeBtn = modalTabs.querySelector('.modal-tab-btn.active');
+      if (activeBtn) {
+        const activeTabId = activeBtn.getAttribute('data-tab');
+        if (activeTabId) {
+          const tabEl = document.getElementById(activeTabId);
+          if (tabEl) tabEl.classList.add('active-tab');
+        }
+      }
+    }
 
     // Oculta Formulário
-    editSubscriberForm.classList.add('hidden');
-    modalViewFooter.classList.remove('hidden');
-    modalEditFooter.classList.add('hidden');
+    if (editSubscriberForm) editSubscriberForm.classList.add('hidden');
+    if (modalViewFooter) modalViewFooter.classList.remove('hidden');
+    if (modalEditFooter) modalEditFooter.classList.add('hidden');
     
     if (window.lucide) window.lucide.createIcons();
   }
