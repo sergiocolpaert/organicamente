@@ -28,9 +28,68 @@ async function supabaseFetch(path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+function formatBrl(val) {
+  return `R$ ${Number(val || 0).toFixed(2).replace('.', ',')}`;
+}
+
+function calculateCestaPrice(cestaTipo) {
+  const t = String(cestaTipo || '').toLowerCase();
+  if (t.includes('individual')) return 130.0;
+  if (t.includes('quinzenal')) return 90.0;
+  if (t.includes('avulsa') || t.includes('unitária')) return 45.0;
+  return 180.0; // Padrão Cesta Família
+}
+
+function calculateOvosPrice(cestaTipo, ovosTipo) {
+  const o = String(ovosTipo || '').toLowerCase();
+  if (!o || o.includes('sem ovos') || o.includes('não') || o.includes('nenhum')) return 0.0;
+
+  const c = String(cestaTipo || '').toLowerCase();
+  let deliveries = 4;
+  if (c.includes('quinzenal')) deliveries = 2;
+  if (c.includes('avulsa') || c.includes('unitária')) deliveries = 1;
+
+  let dozens = 1;
+  if (o.includes('2 dúzias') || o.includes('2 duzias')) dozens = 2;
+  if (o.includes('3 dúzias') || o.includes('3 duzias')) dozens = 3;
+
+  return dozens * deliveries * 16.0;
+}
+
 // Mapeamento: Banco PostgreSQL (snake_case) <-> Aplicação JS (camelCase)
 export function mapRowFromSupabase(row) {
   if (!row) return null;
+
+  const cestaTipo = row.cesta_tipo || 'Cesta Família';
+  const ovosTipo = row.ovos_tipo || 'Sem Ovos';
+
+  const baseCestaVal = calculateCestaPrice(cestaTipo);
+  const baseOvosVal = calculateOvosPrice(cestaTipo, ovosTipo);
+  const calculatedTotal = (cestaTipo.toLowerCase().includes('avulsa') ? 0 : baseCestaVal) + baseOvosVal;
+  const calculatedFirstPay = baseCestaVal + baseOvosVal + 35.0;
+
+  // Reconciliar valores se estiverem vazios ou com o fallback legado 'R$ 180,00' em cestas não-Família
+  let cestaValor = row.cesta_valor;
+  if (!cestaValor || (cestaValor === 'R$ 180,00' && !cestaTipo.toLowerCase().includes('família'))) {
+    cestaValor = formatBrl(baseCestaVal);
+  }
+
+  let totalMensal = row.total_mensal;
+  if (!totalMensal || (totalMensal === 'R$ 180,00' && !cestaTipo.toLowerCase().includes('família'))) {
+    totalMensal = formatBrl(calculatedTotal);
+  }
+
+  let primeiroPagamento = row.primeiro_pagamento;
+  if (!primeiroPagamento || (primeiroPagamento === 'R$ 215,00' && !cestaTipo.toLowerCase().includes('família'))) {
+    primeiroPagamento = formatBrl(calculatedFirstPay);
+  }
+
+  // Normalizar nomenclatura de status para padronização ('Ativo', 'Pausado', 'Cancelado', 'Pendente')
+  let statusAss = row.status_assinatura || 'Pendente';
+  if (statusAss === 'Ativa') statusAss = 'Ativo';
+  if (statusAss === 'Pausada') statusAss = 'Pausado';
+  if (statusAss === 'Cancelada') statusAss = 'Cancelado';
+
   return {
     nome: row.nome || '',
     cpf: row.cpf || '',
@@ -46,14 +105,14 @@ export function mapRowFromSupabase(row) {
     comoConheceu: row.como_conheceu || 'Não informado',
     produtor: row.produtor || 'Bruno',
     diaEntrega: row.dia_entrega || 'Terça-feira',
-    cestaTipo: row.cesta_tipo || 'Cesta Família',
-    cestaValor: row.cesta_valor || 'R$ 180,00',
-    ovosTipo: row.ovos_tipo || 'Sem Ovos',
-    ovosValor: row.ovos_valor || 'R$ 0,00',
-    totalMensal: row.total_mensal || 'R$ 180,00',
-    primeiroPagamento: row.primeiro_pagamento || 'R$ 215,00',
+    cestaTipo: cestaTipo,
+    cestaValor: cestaValor,
+    ovosTipo: ovosTipo,
+    ovosValor: row.ovos_valor || formatBrl(baseOvosVal),
+    totalMensal: totalMensal,
+    primeiroPagamento: primeiroPagamento,
     formaPagamento: row.forma_pagamento || 'PIX',
-    statusAssinatura: row.status_assinatura || 'Pendente',
+    statusAssinatura: statusAss,
     statusFinanceiroManual: row.status_financeiro_manual || null,
     motivoCancelamento: row.motivo_cancelamento || '',
     motivoDetalhe: row.motivo_detalhe || '',
@@ -65,12 +124,25 @@ export function mapRowFromSupabase(row) {
 }
 
 export function mapRowToSupabase(data) {
-  const cleanCpf = String(data.cpf || '').replace(/\D/g, '');
+  const rawCpf = String(data.cpf || '');
+  const cleanCpf = rawCpf.replace(/\D/g, '');
   const prodLower = (data.produtor || '').toLowerCase();
   const produtorClean = prodLower.includes('russo') ? 'Russo' : 'Bruno';
 
+  const cestaTipo = data.cestaTipo || 'Cesta Família';
+  const ovosTipo = data.ovosTipo || 'Sem Ovos';
+  const baseCestaVal = calculateCestaPrice(cestaTipo);
+  const baseOvosVal = calculateOvosPrice(cestaTipo, ovosTipo);
+  const calculatedTotal = (cestaTipo.toLowerCase().includes('avulsa') ? 0 : baseCestaVal) + baseOvosVal;
+  const calculatedFirstPay = baseCestaVal + baseOvosVal + 35.0;
+
+  let statusAss = data.statusAssinatura || 'Pendente';
+  if (statusAss === 'Ativa') statusAss = 'Ativo';
+  if (statusAss === 'Pausada') statusAss = 'Pausado';
+  if (statusAss === 'Cancelada') statusAss = 'Cancelado';
+
   return {
-    cpf: cleanCpf,
+    cpf: cleanCpf || rawCpf,
     nome: data.nome || '',
     email: data.email || '',
     telefone: data.telefone || '',
@@ -84,14 +156,14 @@ export function mapRowToSupabase(data) {
     como_conheceu: data.comoConheceu || 'Não informado',
     produtor: produtorClean,
     dia_entrega: data.diaEntrega || (produtorClean === 'Russo' ? 'Quarta-feira' : 'Terça-feira'),
-    cesta_tipo: data.cestaTipo || 'Cesta Família',
-    cesta_valor: data.cestaValor || 'R$ 180,00',
-    ovos_tipo: data.ovosTipo || 'Sem Ovos',
-    ovos_valor: data.ovosValor || 'R$ 0,00',
-    total_mensal: data.totalMensal || 'R$ 180,00',
-    primeiro_pagamento: data.primeiroPagamento || 'R$ 215,00',
+    cesta_tipo: cestaTipo,
+    cesta_valor: data.cestaValor || formatBrl(baseCestaVal),
+    ovos_tipo: ovosTipo,
+    ovos_valor: data.ovosValor || formatBrl(baseOvosVal),
+    total_mensal: data.totalMensal || formatBrl(calculatedTotal),
+    primeiro_pagamento: data.primeiroPagamento || formatBrl(calculatedFirstPay),
     forma_pagamento: data.formaPagamento || 'PIX',
-    status_assinatura: data.statusAssinatura || 'Pendente',
+    status_assinatura: statusAss,
     status_financeiro_manual: data.statusFinanceiroManual || null,
     motivo_cancelamento: data.motivoCancelamento || '',
     motivo_detalhe: data.motivoDetalhe || '',
@@ -122,9 +194,13 @@ export async function createSubscriberInSupabase(data) {
 }
 
 export async function updateSubscriberInSupabase(cpf, data) {
-  const cleanCpf = String(cpf).replace(/\D/g, '');
+  const rawCpf = String(cpf || '');
+  const cleanCpf = rawCpf.replace(/\D/g, '');
   const payload = mapRowToSupabase(data);
-  const rows = await supabaseFetch(`/subscribers?cpf=eq.${cleanCpf}`, {
+
+  // Buscar por CPF limpo ou formatado com pontuação
+  const query = `/subscribers?or=(cpf.eq.${cleanCpf},cpf.eq.${encodeURIComponent(rawCpf)})`;
+  const rows = await supabaseFetch(query, {
     method: 'PATCH',
     headers: { 'Prefer': 'return=representation' },
     body: JSON.stringify(payload)
@@ -133,8 +209,9 @@ export async function updateSubscriberInSupabase(cpf, data) {
 }
 
 export async function deleteSubscriberInSupabase(cpf) {
-  const cleanCpf = String(cpf).replace(/\D/g, '');
-  await supabaseFetch(`/subscribers?cpf=eq.${cleanCpf}`, {
+  const rawCpf = String(cpf || '');
+  const cleanCpf = rawCpf.replace(/\D/g, '');
+  await supabaseFetch(`/subscribers?or=(cpf.eq.${cleanCpf},cpf.eq.${encodeURIComponent(rawCpf)})`, {
     method: 'DELETE'
   });
   return true;

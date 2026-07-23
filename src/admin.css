@@ -864,7 +864,7 @@ tr:hover td {
   background-color: rgba(11, 31, 23, 0.5);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  z-index: 20;
+  z-index: 1000;
   display: none;
   align-items: center;
   justify-content: center;
