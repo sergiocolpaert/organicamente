@@ -2505,27 +2505,25 @@ tr:hover td {
    WIDGET FLUTUANTE DE PROGRESSO DE ATUALIZAÇÃO (RODAPÉ CENTRO)
    ========================================================================== */
 .sync-progress-card {
-  position: fixed;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10000;
-  background: var(--color-card-bg);
-  border: 1px solid rgba(27, 67, 50, 0.18);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
-  padding: 12px 24px;
-  border-radius: 40px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: auto;
+  position: fixed !important;
+  bottom: 28px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 99999 !important;
+  background: #ffffff !important;
+  border: 1.5px solid rgba(27, 67, 50, 0.2) !important;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25) !important;
+  padding: 12px 24px !important;
+  border-radius: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .sync-progress-card.hidden {
-  opacity: 0;
-  transform: translate(-50%, 24px);
-  pointer-events: none;
+  display: none !important;
 }
 
 .sync-progress-content {
