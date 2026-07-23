@@ -332,8 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
       loadingOverlay.classList.remove('hidden');
     }
 
-    btnRefresh.classList.add('spinning');
-    btnRefresh.disabled = true;
+    if (btnRefresh) {
+      btnRefresh.classList.add('spinning');
+      btnRefresh.disabled = true;
+    }
     showTableLoading();
 
     try {
@@ -376,8 +378,10 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Erro ao buscar dados:', err);
       showTableError(err.message);
     } finally {
-      btnRefresh.classList.remove('spinning');
-      btnRefresh.disabled = false;
+      if (btnRefresh) {
+        btnRefresh.classList.remove('spinning');
+        btnRefresh.disabled = false;
+      }
       
       if (loadingOverlay) {
         setTimeout(() => {
@@ -1262,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Observações
-    mObservacoes.textContent = sub.observacoes || 'Nenhuma observação informada.';
+    if (mObservacoes) mObservacoes.textContent = sub.observacoes || 'Nenhuma observação informada.';
 
     // Renderização da Linha do Tempo (Timeline)
     if (mTimelineContainer) {
@@ -1378,43 +1382,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Botão de Copiar Endereço
-    btnModalCopyAddress.onclick = () => {
-      const fullAddressText = `${sub.endereco} - ${sub.bairro}, Rio de Janeiro - RJ, CEP: ${formatCEP(sub.cep)}`;
-      navigator.clipboard.writeText(fullAddressText).then(() => {
-        const originalText = btnModalCopyAddress.innerHTML;
-        btnModalCopyAddress.innerHTML = '<i data-lucide="check"></i> <span>Copiado!</span>';
-        if (window.lucide) window.lucide.createIcons();
-        setTimeout(() => {
-          btnModalCopyAddress.innerHTML = originalText;
+    if (btnModalCopyAddress) {
+      btnModalCopyAddress.onclick = () => {
+        const fullAddressText = `${sub.endereco} - ${sub.bairro}, Rio de Janeiro - RJ, CEP: ${formatCEP(sub.cep)}`;
+        navigator.clipboard.writeText(fullAddressText).then(() => {
+          const originalText = btnModalCopyAddress.innerHTML;
+          btnModalCopyAddress.innerHTML = '<i data-lucide="check"></i> <span>Copiado!</span>';
           if (window.lucide) window.lucide.createIcons();
-        }, 1500);
-      });
-    };
-
-    // Link do Google Maps
-    const mapsQuery = encodeURIComponent(`${sub.endereco}, ${sub.bairro}, Rio de Janeiro - RJ`);
-    modalLinkMaps.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
-
-    // WhatsApp Direto
-    const phoneClean = String(sub.telefone || '').replace(/\D/g, '');
-    const primeirNome = (sub.nome || '').split(' ')[0];
-    const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
-    
-    let zapText = `Olá, ${primeirNome}! 🌱 Tudo bem?\n\nAqui é a equipe do Organicamente. Passando para confirmar as informações de sua assinatura:\n\n` +
-      `🧺 *Cesta:* ${sub.cestaTipo}\n` +
-      `🥚 *Ovos:* ${sub.ovosTipo}\n` +
-      `🌾 *Produtor:* ${sub.produtor} (${sub.diaEntrega})\n` +
-      `🚚 *Endereço:* ${sub.endereco}\n`;
-
-    if (asaasStatus === 'PENDING') {
-      zapText += `\n*Nota:* A sua cobrança inicial ainda está pendente. Segue o link para pagamento:\n🔗 ${sub.asaas.invoiceUrl || 'Acesse o site'}\n`;
+          setTimeout(() => {
+            btnModalCopyAddress.innerHTML = originalText;
+            if (window.lucide) window.lucide.createIcons();
+          }, 1500);
+        });
+      };
     }
 
-    zapText += `\nQualquer dúvida, estamos à disposição! 😊`;
-    modalBtnWhatsapp.href = `https://wa.me/55${phoneClean}?text=${encodeURIComponent(zapText)}`;
+    // Link do Google Maps
+    if (modalLinkMaps) {
+      const mapsQuery = encodeURIComponent(`${sub.endereco}, ${sub.bairro}, Rio de Janeiro - RJ`);
+      modalLinkMaps.href = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
+    }
+
+    // WhatsApp Direto
+    if (modalBtnWhatsapp) {
+      const phoneClean = String(sub.telefone || '').replace(/\D/g, '');
+      const primeirNome = (sub.nome || '').split(' ')[0];
+      const asaasStatus = sub.asaas ? sub.asaas.status : 'DESCONHECIDO';
+      
+      let zapText = `Olá, ${primeirNome}! 🌱 Tudo bem?\n\nAqui é a equipe do Organicamente. Passando para confirmar as informações de sua assinatura:\n\n` +
+        `🧺 *Cesta:* ${sub.cestaTipo}\n` +
+        `🥚 *Ovos:* ${sub.ovosTipo}\n` +
+        `🌾 *Produtor:* ${sub.produtor} (${sub.diaEntrega})\n` +
+        `🚚 *Endereço:* ${sub.endereco}\n`;
+
+      if (asaasStatus === 'PENDING') {
+        zapText += `\n*Nota:* A sua cobrança inicial ainda está pendente. Segue o link para pagamento:\n🔗 ${sub.asaas.invoiceUrl || 'Acesse o site'}\n`;
+      }
+
+      zapText += `\nQualquer dúvida, estamos à disposição! 😊`;
+      modalBtnWhatsapp.href = `https://wa.me/55${phoneClean}?text=${encodeURIComponent(zapText)}`;
+    }
 
     // Abre o Modal
-    detailsModal.classList.add('active');
+    if (detailsModal) {
+      detailsModal.classList.add('active');
+    }
     if (window.lucide) window.lucide.createIcons();
   }
 
