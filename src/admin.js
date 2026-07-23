@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Aplicar mesclagem com cache local (Overrides)
       subscribers = applyLocalOverrides(subsList);
-      subscribers.reverse();
+      subscribers.sort((a, b) => new Date(b.dataHora || 0) - new Date(a.dataHora || 0));
 
       applyFilters();
       calculateKpis();
@@ -1431,6 +1431,49 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) window.lucide.createIcons();
           }, 1500);
         });
+      };
+    }
+
+    // Botão de Atualizar Finanças deste Cliente no Asaas
+    const btnSyncSingleAsaas = document.getElementById('btn-sync-single-asaas');
+    if (btnSyncSingleAsaas) {
+      btnSyncSingleAsaas.onclick = async () => {
+        if (!selectedSubscriber || !selectedSubscriber.cpf) return;
+
+        btnSyncSingleAsaas.disabled = true;
+        const originalHtml = btnSyncSingleAsaas.innerHTML;
+        btnSyncSingleAsaas.innerHTML = '<i data-lucide="loader"></i> <span>Buscando Asaas...</span>';
+        if (window.lucide) window.lucide.createIcons();
+
+        try {
+          const token = localStorage.getItem('organicamente_admin_token');
+          const cleanCpf = String(selectedSubscriber.cpf).replace(/\D/g, '');
+          const res = await fetch(`/api/admin/assinaturas?cpf=${cleanCpf}&syncAsaas=true`, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.asaas) {
+              selectedSubscriber.asaas = data.asaas;
+              setLocalOverride(cleanCpf, { asaas: data.asaas });
+              openDetailsModal(selectedSubscriber);
+              showToast(`✓ Finanças de ${selectedSubscriber.nome} atualizadas com sucesso via Asaas!`, 'success');
+            } else {
+              showToast('Nenhuma cobrança encontrada no Asaas para este cliente.', 'warning');
+            }
+          } else {
+            showToast('Erro ao consultar o Asaas.', 'error');
+          }
+        } catch (err) {
+          console.error('Erro ao sincronizar Asaas individual:', err);
+          showToast('Falha de conexão com o Asaas.', 'error');
+        } finally {
+          btnSyncSingleAsaas.disabled = false;
+          btnSyncSingleAsaas.innerHTML = originalHtml;
+          if (window.lucide) window.lucide.createIcons();
+        }
       };
     }
 

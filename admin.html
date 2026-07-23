@@ -739,8 +739,14 @@
 
             <!-- Tabela de Histórico de Pagamentos Asaas -->
             <div style="margin-top: 24px;">
-              <h3><i data-lucide="receipt"></i> Histórico de Faturas Asaas</h3>
-              <div class="table-container" style="max-height: 220px; overflow-y: auto; margin-top: 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin-bottom: 0;"><i data-lucide="receipt"></i> Histórico de Faturas Asaas</h3>
+                <button id="btn-sync-single-asaas" type="button" class="btn-outline" style="gap: 6px; font-size: 12px; padding: 5px 12px;">
+                  <i data-lucide="refresh-cw"></i>
+                  <span>Atualizar Finanças deste Cliente</span>
+                </button>
+              </div>
+              <div class="table-container" style="max-height: 220px; overflow-y: auto;">
                 <table class="report-table">
                   <thead>
                     <tr>

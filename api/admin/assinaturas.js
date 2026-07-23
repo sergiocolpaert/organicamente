@@ -134,6 +134,86 @@ export default async function handler(req, res) {
       const reqUrl = req.url || '';
       const shouldSyncAsaas = reqUrl.includes('syncAsaas=true');
 
+      // Suporte para atualização direcionada de 1 ÚNICO cliente no Asaas
+      if (reqUrl.includes('cpf=')) {
+        try {
+          const searchParams = new URL(reqUrl, 'http://localhost').searchParams;
+          const targetCpf = searchParams.get('cpf');
+          if (targetCpf) {
+            const cleanCpf = targetCpf.replace(/\D/g, '');
+            async function fetchSingleAsaasCustomer(apiKey) {
+              if (!apiKey) return null;
+              try {
+                const cRes = await fetch(`${asaasBaseUrl}/customers?cpfCnpj=${cleanCpf}`, {
+                  headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
+                });
+                if (cRes.ok) {
+                  const cData = await cRes.json();
+                  if (cData.data && cData.data.length > 0) {
+                    const customer = cData.data[0];
+                    const pRes = await fetch(`${asaasBaseUrl}/payments?customer=${customer.id}&limit=100`, {
+                      headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
+                    });
+                    if (pRes.ok) {
+                      const pData = await pRes.json();
+                      const payments = pData.data || [];
+                      let totalPaid = 0;
+                      let paidCount = 0;
+                      const mappedPayments = payments.map(p => {
+                        const isPaid = p.status === 'RECEIVED' || p.status === 'CONFIRMED';
+                        if (isPaid) {
+                          totalPaid += (p.value || 0);
+                          paidCount++;
+                        }
+                        return {
+                          id: p.id,
+                          status: p.status,
+                          dueDate: p.dueDate,
+                          value: p.value,
+                          billingType: p.billingType,
+                          invoiceUrl: p.invoiceUrl || p.bankSlipUrl || '',
+                          paymentDate: p.paymentDate || '',
+                          confirmedDate: p.confirmedDate || ''
+                        };
+                      });
+
+                      const lastP = payments[0] || null;
+                      return {
+                        status: lastP ? lastP.status : 'SEM_COBRANCA',
+                        dueDate: lastP ? lastP.dueDate : '',
+                        value: lastP ? lastP.value : 0,
+                        billingType: lastP ? lastP.billingType : '',
+                        invoiceUrl: lastP ? (lastP.invoiceUrl || lastP.bankSlipUrl || '') : '',
+                        paymentDate: lastP ? (lastP.paymentDate || '') : '',
+                        confirmedDate: lastP ? (lastP.confirmedDate || '') : '',
+                        allPayments: mappedPayments,
+                        totalPaid: totalPaid,
+                        paidCount: paidCount
+                      };
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('Erro na consulta single Asaas:', e);
+              }
+              return null;
+            }
+
+            const singleAsaasInfo = (await fetchSingleAsaasCustomer(apiKeyBruno)) || (await fetchSingleAsaasCustomer(apiKeyRusso));
+            if (singleAsaasInfo) {
+              saveServerOverride(cleanCpf, { asaas: singleAsaasInfo });
+              const subObj = planData.find(s => String(s.cpf || '').replace(/\D/g, '') === cleanCpf);
+              if (subObj) {
+                subObj.asaas = singleAsaasInfo;
+                return res.status(200).json({ success: true, subscriber: subObj, asaas: singleAsaasInfo });
+              }
+            }
+          }
+        } catch (errSingle) {
+          console.error('Erro no processamento singleAsaas:', errSingle);
+        }
+      }
+
       let asaasCache = {
         bruno: { customersByCpf: {}, allPaymentsByCustomerId: {}, lastPaymentsByCustomerId: {} },
         russo: { customersByCpf: {}, allPaymentsByCustomerId: {}, lastPaymentsByCustomerId: {} }

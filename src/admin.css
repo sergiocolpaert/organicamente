@@ -242,6 +242,17 @@ button {
   padding-left: 44px;
 }
 
+.btn-refresh.spinning svg,
+.btn-refresh.spinning i,
+.spinning {
+  animation: spinSlow 1s linear infinite !important;
+}
+
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .input-wrapper input:focus, .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
   border-color: var(--color-primary-light);
   box-shadow: 0 0 0 4px rgba(45, 106, 79, 0.12);
