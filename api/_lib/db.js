@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+
 // ==========================================================================
 // CAMADA DE DADOS E INTEGRAÇÃO SUPABASE / GOOGLE SHEETS (ORGANICAMENTE SYSTEM)
 // ==========================================================================
@@ -6,6 +9,26 @@ const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 export const isSupabaseConfigured = () => Boolean(SUPABASE_URL && SUPABASE_KEY);
+
+const OVERRIDES_FILE = path.join('/tmp', 'organicamente_subscribers_overrides.json');
+
+export function readServerOverrides() {
+  try {
+    if (fs.existsSync(OVERRIDES_FILE)) {
+      return JSON.parse(fs.readFileSync(OVERRIDES_FILE, 'utf8'));
+    }
+  } catch (_) {}
+  return {};
+}
+
+export function saveServerOverride(cpf, patchData) {
+  try {
+    const cleanCpf = String(cpf || '').replace(/\D/g, '');
+    const current = readServerOverrides();
+    current[cleanCpf] = { ...(current[cleanCpf] || {}), ...patchData, _updatedAt: new Date().toISOString() };
+    fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(current), 'utf8');
+  } catch (_) {}
+}
 
 // Helper para chamadas de API REST nativas ao Supabase (Ultra-rápido, ~15ms)
 async function supabaseFetch(path, options = {}) {

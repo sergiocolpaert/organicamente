@@ -1,4 +1,4 @@
-import { isSupabaseConfigured, createSubscriberInSupabase } from './_lib/db.js';
+import { isSupabaseConfigured, createSubscriberInSupabase, saveServerOverride } from './_lib/db.js';
 
 export default async function handler(req, res) {
   // Configura CORS básico se necessário (Vercel gerencia por padrão, mas é boa prática para requisições de outras origens)
@@ -160,33 +160,62 @@ export default async function handler(req, res) {
       pixQrCode = pixData.encodedImage;
     }
 
-    // 5.5. Persistir novo cliente no Supabase PostgreSQL
+    // 5.5. Persistir novo cliente em todas as camadas (Supabase + Cache Servidor + Google Sheets)
+    const formattedValor = `R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`;
+    const subscriberData = {
+      nome: nome || '',
+      email: email || '',
+      telefone: telefone || '',
+      cpf: cpfClean || cpf || '',
+      cep: cepClean || cep || '',
+      endereco: `${endereco}, nº ${numero}${complemento ? ' - ' + complemento : ''}`,
+      bairro: bairro || '',
+      regiao: req.body.regiao || 'Rio de Janeiro',
+      pontoReferencia: req.body.pontoReferencia || 'Não informado',
+      horario: req.body.horario || 'Horário Comercial',
+      vizinho: req.body.vizinho || 'Deixar no local',
+      comoConheceu: req.body.comoConheceu || 'Site de Inscrição',
+      produtor: produtorLower.includes('russo') ? 'Russo' : 'Bruno',
+      diaEntrega: req.body.diaEntrega || (produtorLower.includes('russo') ? 'Quarta-feira' : 'Terça-feira'),
+      cestaTipo: cestaTipo || 'Cesta Família',
+      cestaValor: req.body.cestaValor || formattedValor,
+      ovosTipo: req.body.ovosTipo || 'Sem Ovos',
+      ovosValor: req.body.ovosValor || 'R$ 0,00',
+      totalMensal: req.body.totalMensal || formattedValor,
+      primeiroPagamento: req.body.primeiroPagamento || formattedValor,
+      formaPagamento: billingType || 'PIX',
+      statusAssinatura: 'Pendente',
+      observacoes: req.body.observacoes || 'Inscrição realizada pelo formulário do site',
+      dataHora: req.body.dataHora || new Date().toISOString()
+    };
+
+    // 1. Supabase PostgreSQL DB
     if (isSupabaseConfigured()) {
       try {
-        await createSubscriberInSupabase({
-          nome,
-          email,
-          telefone,
-          cpf,
-          cep,
-          endereco: `${endereco}, nº ${numero}${complemento ? ' - ' + complemento : ''}`,
-          bairro,
-          regiao: req.body.regiao || 'Rio de Janeiro',
-          produtor: produtorLower.includes('russo') ? 'Russo' : 'Bruno',
-          diaEntrega: req.body.diaEntrega || (produtorLower.includes('russo') ? 'Quarta-feira' : 'Terça-feira'),
-          cestaTipo: cestaTipo || 'Cesta Família',
-          cestaValor: `R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`,
-          ovosTipo: req.body.ovosTipo || 'Sem Ovos',
-          ovosValor: req.body.ovosValor || 'R$ 0,00',
-          totalMensal: `R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`,
-          primeiroPagamento: `R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}`,
-          formaPagamento: billingType,
-          statusAssinatura: 'Pendente',
-          comoConheceu: req.body.comoConheceu || 'Site',
-          observacoes: 'Inscrição realizada pelo formulário do site'
-        });
+        await createSubscriberInSupabase(subscriberData);
       } catch (dbErr) {
         console.error('Erro ao gravar cliente no Supabase via site:', dbErr);
+      }
+    }
+
+    // 2. Cache de Servidor (Server Overrides)
+    try {
+      saveServerOverride(cpfClean, subscriberData);
+    } catch (soErr) {
+      console.error('Erro ao gravar no cache do servidor:', soErr);
+    }
+
+    // 3. Fallback Google Sheets
+    const sheetsUrl = process.env.GOOGLE_SHEETS_WEBAPP_URL;
+    if (sheetsUrl) {
+      try {
+        await fetch(sheetsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(subscriberData)
+        });
+      } catch (sErr) {
+        console.error('Erro ao enviar inscrição para Google Sheets:', sErr);
       }
     }
 

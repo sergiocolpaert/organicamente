@@ -1,32 +1,13 @@
-import fs from 'fs';
-import path from 'path';
 import {
   isSupabaseConfigured,
   getSubscribersFromSupabase,
   createSubscriberInSupabase,
   updateSubscriberInSupabase,
-  deleteSubscriberInSupabase
+  deleteSubscriberInSupabase,
+  readServerOverrides,
+  saveServerOverride
 } from '../_lib/db.js';
 
-const OVERRIDES_FILE = path.join('/tmp', 'organicamente_subscribers_overrides.json');
-
-function readServerOverrides() {
-  try {
-    if (fs.existsSync(OVERRIDES_FILE)) {
-      return JSON.parse(fs.readFileSync(OVERRIDES_FILE, 'utf8'));
-    }
-  } catch (_) {}
-  return {};
-}
-
-function saveServerOverride(cpf, patchData) {
-  try {
-    const cleanCpf = String(cpf || '').replace(/\D/g, '');
-    const current = readServerOverrides();
-    current[cleanCpf] = { ...(current[cleanCpf] || {}), ...patchData, _updatedAt: new Date().toISOString() };
-    fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(current), 'utf8');
-  } catch (_) {}
-}
 
 export default async function handler(req, res) {
   // Configura CORS e cabeçalhos

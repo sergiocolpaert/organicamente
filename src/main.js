@@ -1050,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
       statusAssinatura: 'Pendente'
     };
 
-    // Payload para o Asaas (backend seguro)
+    // Payload completo para o Asaas e ingestão no sistema
     const apiPayload = {
       nome: data.nome,
       email: data.email,
@@ -1061,10 +1061,23 @@ document.addEventListener('DOMContentLoaded', () => {
       numero: formData.get('numero'),
       complemento: formData.get('complemento') || '',
       bairro: data.bairro,
+      regiao: data.regiao || 'Rio de Janeiro',
+      pontoReferencia: data.pontoReferencia || 'Não informado',
+      horario: data.horario || 'Horário Comercial',
+      vizinho: data.vizinho || 'Deixar no local',
+      comoConheceu: data.comoConheceu || 'Não informado',
+      observacoes: data.observacoes || 'Inscrição realizada pelo formulário do site',
       produtor: data.produtor,
-      valor: calc.initialPaymentTotal,
+      diaEntrega: data.diaEntrega,
       cestaTipo: calc.basketLabel,
-      billingType: billingType
+      cestaValor: data.cestaValor,
+      ovosTipo: data.ovosTipo,
+      ovosValor: data.ovosValor,
+      totalMensal: data.totalMensal,
+      primeiroPagamento: data.primeiroPagamento,
+      valor: calc.initialPaymentTotal,
+      billingType: billingType,
+      dataHora: new Date().toISOString()
     };
 
     // Chamar backend para criar a cobrança real no Asaas
