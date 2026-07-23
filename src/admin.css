@@ -242,15 +242,12 @@ button {
   padding-left: 44px;
 }
 
-.btn-refresh.spinning svg,
-.btn-refresh.spinning i,
-.spinning {
-  animation: spinSlow 1s linear infinite !important;
-}
-
-@keyframes spinSlow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.btn-refresh:disabled,
+.btn-refresh.loading-state {
+  opacity: 0.55 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  filter: grayscale(30%);
 }
 
 .input-wrapper input:focus, .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
@@ -2502,6 +2499,87 @@ tr:hover td {
   .modal-header h2 {
     font-size: 18px;
   }
+}
+
+/* ==========================================================================
+   WIDGET FLUTUANTE DE PROGRESSO DE ATUALIZAÇÃO (RODAPÉ CENTRO)
+   ========================================================================== */
+.sync-progress-card {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  background: var(--color-card-bg);
+  border: 1px solid rgba(27, 67, 50, 0.18);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+  padding: 12px 24px;
+  border-radius: 40px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+
+.sync-progress-card.hidden {
+  opacity: 0;
+  transform: translate(-50%, 24px);
+  pointer-events: none;
+}
+
+.sync-progress-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sync-spinner-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+}
+
+.sync-spinner-icon i, .sync-spinner-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sync-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-primary);
+  white-space: nowrap;
+}
+
+.sync-bar-container {
+  width: 130px;
+  height: 6px;
+  background: rgba(27, 67, 50, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.sync-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #2d6a4f, #52b788);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.sync-bar-fill.indeterminate {
+  width: 40%;
+  animation: indeterminateBar 1.2s ease-in-out infinite;
+}
+
+@keyframes indeterminateBar {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
 }
 
 

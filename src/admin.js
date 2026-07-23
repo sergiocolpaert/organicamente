@@ -366,14 +366,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnRefresh) {
-      btnRefresh.classList.add('spinning');
       btnRefresh.disabled = true;
+      btnRefresh.classList.add('loading-state');
     }
+
+    const syncWidget = document.getElementById('sync-progress-widget');
+    const syncText = document.getElementById('sync-progress-text');
+    const syncFill = document.getElementById('sync-progress-fill');
+    const syncIcon = document.getElementById('sync-progress-icon');
 
     if (isFirstLoad) {
       showTableLoading();
-    } else if (syncAsaas) {
-      showToast('🔄 Sincronizando cobranças em tempo real com Asaas & Supabase...', 'warning');
+    } else if (syncAsaas && syncWidget) {
+      syncWidget.classList.remove('hidden');
+      if (syncText) syncText.textContent = 'Atualizando dados...';
+      if (syncFill) {
+        syncFill.className = 'sync-bar-fill indeterminate';
+        syncFill.style.width = '';
+      }
+      if (syncIcon) {
+        syncIcon.style.color = 'var(--color-primary)';
+        syncIcon.innerHTML = '<i data-lucide="refresh-cw"></i>';
+        if (window.lucide) window.lucide.createIcons();
+      }
     }
 
     try {
@@ -406,16 +421,32 @@ document.addEventListener('DOMContentLoaded', () => {
       applyFilters();
       calculateKpis();
 
-      if (syncAsaas) {
-        showToast('✓ Sincronização com Asaas concluída com sucesso!', 'success');
+      if (syncAsaas && syncWidget) {
+        if (syncText) syncText.textContent = 'Dados atualizados!';
+        if (syncFill) {
+          syncFill.className = 'sync-bar-fill';
+          syncFill.style.width = '100%';
+        }
+        if (syncIcon) {
+          syncIcon.style.color = '#166534';
+          syncIcon.innerHTML = '<i data-lucide="check-circle"></i>';
+          if (window.lucide) window.lucide.createIcons();
+        }
+        setTimeout(() => {
+          syncWidget.classList.add('hidden');
+        }, 1400);
       }
     } catch (err) {
       console.error('Erro ao buscar dados:', err);
       showTableError(err.message);
+      if (syncAsaas && syncWidget) {
+        if (syncText) syncText.textContent = 'Erro ao atualizar';
+        setTimeout(() => syncWidget.classList.add('hidden'), 2000);
+      }
     } finally {
       if (btnRefresh) {
-        btnRefresh.classList.remove('spinning');
         btnRefresh.disabled = false;
+        btnRefresh.classList.remove('loading-state');
       }
       
       if (loadingOverlay) {
