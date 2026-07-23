@@ -884,22 +884,21 @@ tr:hover td {
 .btn-whatsapp-icon {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
   background-color: #25d366;
   color: #ffffff !important;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 9px;
-  border-radius: 14px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
   text-decoration: none !important;
   transition: all 0.2s ease;
-  line-height: 1;
+  flex-shrink: 0;
 }
 
 .btn-whatsapp-icon:hover {
   background-color: #1da851;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.35);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.4);
 }
 
 .btn-whatsapp-icon svg {
@@ -2197,19 +2196,21 @@ tr:hover td {
    ========================================================================== */
 .toast-container {
   position: fixed;
-  top: 24px;
-  right: 24px;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 9999;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
+  align-items: center;
   gap: 10px;
   pointer-events: none;
 }
 
 .toast-item {
   pointer-events: auto;
-  min-width: 300px;
-  max-width: 420px;
+  min-width: 320px;
+  max-width: 480px;
   padding: 14px 18px;
   border-radius: var(--radius-lg);
   font-size: 13.5px;
@@ -2217,7 +2218,7 @@ tr:hover td {
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
   animation: toastSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: opacity 0.3s ease, transform 0.3s ease;
   line-height: 1.4;
@@ -2263,8 +2264,8 @@ tr:hover td {
 }
 
 @keyframes toastSlideIn {
-  from { opacity: 0; transform: translateX(40px); }
-  to { opacity: 1; transform: translateX(0); }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ==========================================================================

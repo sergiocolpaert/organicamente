@@ -327,25 +327,58 @@ document.addEventListener('DOMContentLoaded', () => {
   // 2. BUSCA DE DADOS (GET)
   // ==========================================================================
   
-  async function fetchData() {
+  // --------------------------------------------------------------------------
+  // PERSISTÊNCIA REFORÇADA: CACHE LOCAL DE ALTERAÇÕES (OVERIDES CLIENTE)
+  // --------------------------------------------------------------------------
+  function getLocalOverrides() {
+    try {
+      return JSON.parse(localStorage.getItem('organicamente_subscriber_overrides') || '{}');
+    } catch (_) { return {}; }
+  }
+
+  function setLocalOverride(cpf, patchData) {
+    if (!cpf) return;
+    const clean = String(cpf).replace(/\D/g, '');
+    const current = getLocalOverrides();
+    current[clean] = { ...(current[clean] || {}), ...patchData, _updatedAt: new Date().toISOString() };
+    localStorage.setItem('organicamente_subscriber_overrides', JSON.stringify(current));
+  }
+
+  function applyLocalOverrides(subsList) {
+    if (!Array.isArray(subsList)) return [];
+    const overrides = getLocalOverrides();
+    if (!overrides || Object.keys(overrides).length === 0) return subsList;
+
+    return subsList.map(s => {
+      const clean = String(s.cpf || '').replace(/\D/g, '');
+      if (overrides[clean]) {
+        return { ...s, ...overrides[clean] };
+      }
+      return s;
+    });
+  }
+
+  async function fetchData(syncAsaas = false) {
     const token = localStorage.getItem('organicamente_admin_token');
     if (!token) {
       if (loadingOverlay) loadingOverlay.classList.add('hidden');
       return;
     }
 
-    if (loadingOverlay) {
-      loadingOverlay.classList.remove('hidden');
-    }
-
     if (btnRefresh) {
       btnRefresh.classList.add('spinning');
       btnRefresh.disabled = true;
     }
-    showTableLoading();
+
+    if (isFirstLoad) {
+      showTableLoading();
+    } else if (syncAsaas) {
+      showToast('🔄 Sincronizando cobranças em tempo real com Asaas & Supabase...', 'warning');
+    }
 
     try {
-      const res = await fetch('/api/admin/assinaturas', {
+      const url = syncAsaas ? '/api/admin/assinaturas?syncAsaas=true' : '/api/admin/assinaturas';
+      const res = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -359,27 +392,23 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      const contentType = res.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error(`Resposta inválida do servidor (Erro ${res.status})`);
-      }
-
       if (!res.ok) {
-        let errMsg = 'Falha ao obter lista de assinantes';
-        try {
-          const errData = await res.json();
-          if (errData && errData.error) errMsg = errData.error;
-        } catch (_) {}
-        throw new Error(errMsg);
+        throw new Error(`Falha ao obter lista de assinantes (Erro ${res.status})`);
       }
 
-      subscribers = await res.json();
-      
-      // Ordenação mais recente no topo
+      const rawData = await res.json();
+      const subsList = Array.isArray(rawData) ? rawData : [];
+
+      // Aplicar mesclagem com cache local (Overrides)
+      subscribers = applyLocalOverrides(subsList);
       subscribers.reverse();
 
       applyFilters();
       calculateKpis();
+
+      if (syncAsaas) {
+        showToast('✓ Sincronização com Asaas concluída com sucesso!', 'success');
+      }
     } catch (err) {
       console.error('Erro ao buscar dados:', err);
       showTableError(err.message);
@@ -390,16 +419,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       if (loadingOverlay) {
-        setTimeout(() => {
-          loadingOverlay.classList.add('hidden');
-          isFirstLoad = false;
-        }, 600);
+        loadingOverlay.classList.add('hidden');
+        isFirstLoad = false;
       }
     }
   }
 
   if (btnRefresh) {
-    btnRefresh.addEventListener('click', fetchData);
+    btnRefresh.addEventListener('click', () => fetchData(true));
   }
 
   // ==========================================================================
@@ -1563,7 +1590,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       selectedSubscriber.historicoStatus.unshift(historyItem);
 
-      // Atualizar no array principal
+      // Atualizar no array principal e salvar cache local permanente
+      setLocalOverride(selectedSubscriber.cpf, {
+        statusAssinatura: selectedSubscriber.statusAssinatura,
+        statusFinanceiroManual: selectedSubscriber.statusFinanceiroManual,
+        historicoStatus: selectedSubscriber.historicoStatus,
+        motivoCancelamento: selectedSubscriber.motivoCancelamento || '',
+        motivoDetalhe: selectedSubscriber.motivoDetalhe || ''
+      });
+
       const idx = subscribers.findIndex(s => s.cpf === selectedSubscriber.cpf);
       if (idx !== -1) {
         subscribers[idx] = { ...selectedSubscriber };
@@ -2228,6 +2263,9 @@ document.addEventListener('DOMContentLoaded', () => {
         formaPagamento: document.getElementById('edit-forma-pagamento').value,
         dataHora: editOriginalDataHora.value
       };
+
+      // Gravar override no cache local do cliente
+      setLocalOverride(updatedData.cpf, updatedData);
 
       try {
         const res = await fetch('/api/admin/assinaturas', {

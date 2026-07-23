@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import {
   isSupabaseConfigured,
   getSubscribersFromSupabase,
@@ -5,6 +7,26 @@ import {
   updateSubscriberInSupabase,
   deleteSubscriberInSupabase
 } from '../_lib/db.js';
+
+const OVERRIDES_FILE = path.join('/tmp', 'organicamente_subscribers_overrides.json');
+
+function readServerOverrides() {
+  try {
+    if (fs.existsSync(OVERRIDES_FILE)) {
+      return JSON.parse(fs.readFileSync(OVERRIDES_FILE, 'utf8'));
+    }
+  } catch (_) {}
+  return {};
+}
+
+function saveServerOverride(cpf, patchData) {
+  try {
+    const cleanCpf = String(cpf || '').replace(/\D/g, '');
+    const current = readServerOverrides();
+    current[cleanCpf] = { ...(current[cleanCpf] || {}), ...patchData, _updatedAt: new Date().toISOString() };
+    fs.writeFileSync(OVERRIDES_FILE, JSON.stringify(current), 'utf8');
+  } catch (_) {}
+}
 
 export default async function handler(req, res) {
   // Configura CORS e cabeçalhos
@@ -33,7 +55,7 @@ export default async function handler(req, res) {
 
     const sheetsUrl = process.env.GOOGLE_SHEETS_WEBAPP_URL || '';
     const isProduction = process.env.ASAAS_ENV === 'production';
-    const asaasBaseUrl = isProduction ? 'https://api.asaas.com/v3' : 'https://sandbox.asaas.com/v3';
+    const asaasBaseUrl = process.env.ASAAS_BASE_URL || (isProduction ? 'https://api.asaas.com/v3' : 'https://sandbox.asaas.com/v3');
     const apiKeyBruno = process.env.ASAAS_API_KEY_BRUNO;
     const apiKeyRusso = process.env.ASAAS_API_KEY_RUSSO;
 
@@ -94,71 +116,85 @@ export default async function handler(req, res) {
       // Filtrar linhas completamente vazias ou corrompidas (sem nome nem CPF)
       planData = planData.filter(row => row && row.nome && String(row.nome).trim() !== '' && String(row.nome).trim() !== '-');
 
+      // Aplicar overrides salvos no servidor
+      const serverOverrides = readServerOverrides();
+      planData = planData.map(row => {
+        const cleanCpf = String(row.cpf || '').replace(/\D/g, '');
+        if (serverOverrides[cleanCpf]) {
+          return { ...row, ...serverOverrides[cleanCpf] };
+        }
+        return row;
+      });
+
       if (planData.length === 0) {
         return res.status(200).json([]);
       }
 
-      // Buscar faturas recentes em lote do Asaas para Bruno e Russo para otimizar velocidade
-      // Buscar faturas recentes em lote do Asaas para Bruno e Russo para otimizar velocidade
+      // Verificar se a solicitação pediu sincronização em tempo real do Asaas
+      const reqUrl = req.url || '';
+      const shouldSyncAsaas = reqUrl.includes('syncAsaas=true');
+
       let asaasCache = {
         bruno: { customersByCpf: {}, allPaymentsByCustomerId: {}, lastPaymentsByCustomerId: {} },
         russo: { customersByCpf: {}, allPaymentsByCustomerId: {}, lastPaymentsByCustomerId: {} }
       };
 
-      async function fetchAsaasBatch(apiKey, produtorKey) {
-        if (!apiKey) return;
-        try {
-          // Clientes (até 200 registros)
-          for (const offset of [0, 100]) {
-            const custRes = await fetch(`${asaasBaseUrl}/customers?limit=100&offset=${offset}`, {
-              method: 'GET',
-              headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
-            });
-            if (custRes.ok) {
-              const custData = await custRes.json();
-              if (custData.data && custData.data.length > 0) {
-                custData.data.forEach(c => {
-                  if (c.cpfCnpj) {
-                    const cleanCpf = c.cpfCnpj.replace(/\D/g, '');
-                    asaasCache[produtorKey].customersByCpf[cleanCpf] = c;
-                  }
-                });
+      if (shouldSyncAsaas) {
+        async function fetchAsaasBatch(apiKey, produtorKey) {
+          if (!apiKey) return;
+          try {
+            // Clientes (até 200 registros)
+            for (const offset of [0, 100]) {
+              const custRes = await fetch(`${asaasBaseUrl}/customers?limit=100&offset=${offset}`, {
+                method: 'GET',
+                headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
+              });
+              if (custRes.ok) {
+                const custData = await custRes.json();
+                if (custData.data && custData.data.length > 0) {
+                  custData.data.forEach(c => {
+                    if (c.cpfCnpj) {
+                      const cleanCpf = c.cpfCnpj.replace(/\D/g, '');
+                      asaasCache[produtorKey].customersByCpf[cleanCpf] = c;
+                    }
+                  });
+                } else break;
               } else break;
-            } else break;
-          }
+            }
 
-          // Cobranças (até 200 registros)
-          for (const offset of [0, 100]) {
-            const payRes = await fetch(`${asaasBaseUrl}/payments?limit=100&offset=${offset}`, {
-              method: 'GET',
-              headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
-            });
-            if (payRes.ok) {
-              const payData = await payRes.json();
-              if (payData.data && payData.data.length > 0) {
-                payData.data.forEach(p => {
-                  if (p.customer) {
-                    if (!asaasCache[produtorKey].allPaymentsByCustomerId[p.customer]) {
-                      asaasCache[produtorKey].allPaymentsByCustomerId[p.customer] = [];
+            // Cobranças (até 200 registros)
+            for (const offset of [0, 100]) {
+              const payRes = await fetch(`${asaasBaseUrl}/payments?limit=100&offset=${offset}`, {
+                method: 'GET',
+                headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
+              });
+              if (payRes.ok) {
+                const payData = await payRes.json();
+                if (payData.data && payData.data.length > 0) {
+                  payData.data.forEach(p => {
+                    if (p.customer) {
+                      if (!asaasCache[produtorKey].allPaymentsByCustomerId[p.customer]) {
+                        asaasCache[produtorKey].allPaymentsByCustomerId[p.customer] = [];
+                      }
+                      asaasCache[produtorKey].allPaymentsByCustomerId[p.customer].push(p);
+                      if (!asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer]) {
+                        asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer] = p;
+                      }
                     }
-                    asaasCache[produtorKey].allPaymentsByCustomerId[p.customer].push(p);
-                    if (!asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer]) {
-                      asaasCache[produtorKey].lastPaymentsByCustomerId[p.customer] = p;
-                    }
-                  }
-                });
+                  });
+                } else break;
               } else break;
-            } else break;
+            }
+          } catch (err) {
+            console.error(`Erro ao carregar lote do Asaas para ${produtorKey}:`, err);
           }
-        } catch (err) {
-          console.error(`Erro ao carregar lote do Asaas para ${produtorKey}:`, err);
         }
-      }
 
-      await Promise.all([
-        fetchAsaasBatch(apiKeyBruno, 'bruno'),
-        fetchAsaasBatch(apiKeyRusso, 'russo')
-      ]).catch(err => console.error('Erro no carregamento Asaas:', err));
+        await Promise.all([
+          fetchAsaasBatch(apiKeyBruno, 'bruno'),
+          fetchAsaasBatch(apiKeyRusso, 'russo')
+        ]).catch(err => console.error('Erro no carregamento Asaas:', err));
+      }
 
       // Cruzamento rápido
       const responseData = planData.map((row) => {
@@ -385,6 +421,9 @@ export default async function handler(req, res) {
       if ((data.statusAssinatura === 'Inativo' || data.statusAssinatura === 'Cancelado') && !data.dataStatusAlterado) {
         data.dataStatusAlterado = new Date().toISOString();
       }
+
+      // Persistir no cache de overrides do servidor
+      saveServerOverride(data.cpf, data);
 
       if (isSupabaseConfigured()) {
         try {
